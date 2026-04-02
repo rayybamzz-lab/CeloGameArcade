@@ -40,7 +40,8 @@ export default function GameArcade() {
   const { data: balanceData } = useBalance({ address: address });
   const { data: usdmBalanceRaw } = useReadContract({ address: USDM_TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: address ? [address] : undefined });
   const { data: allowanceData, refetch: refetchAllowance } = useReadContract({ address: USDM_TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: address ? [address, CONTRACT_ADDRESS] : undefined });
-  const { data: entryFeeOnChain } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'ENTRY_FEE' });
+  const { data: entryFeeV3 } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'entryFee' });
+  const { data: entryFeeLegacy } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'ENTRY_FEE' });
   const celoBalance = balanceData ? Number(formatEther(balanceData.value)).toFixed(3) : '0.000';
   const usdmBalance = usdmBalanceRaw ? Number(formatUnits(usdmBalanceRaw, 18)).toFixed(2) : '0.00';
 
@@ -56,7 +57,7 @@ export default function GameArcade() {
   const season = arcadeStatsData?.[3] ? Number(arcadeStatsData[3]) : 1;
   const totalPlayers = arcadeStatsData?.[1] ? Number(arcadeStatsData[1]) : 0;
   const timeUntilClaim = timeUntilClaimData ? Number(timeUntilClaimData) : 0;
-  const effectiveEntryFee = entryFeeOnChain ?? ENTRY_FEE;
+  const effectiveEntryFee = entryFeeV3 ?? entryFeeLegacy ?? ENTRY_FEE;
   const entryFeeFormatted = Number(formatUnits(effectiveEntryFee, 18)).toFixed(2);
   const hasEnoughUsdmAllowance = (allowanceData ?? BigInt(0)) >= effectiveEntryFee;
 

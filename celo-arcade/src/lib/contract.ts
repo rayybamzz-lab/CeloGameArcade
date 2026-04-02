@@ -1,6 +1,7 @@
 import { parseUnits } from 'viem';
 
-const DEFAULT_CONTRACT_ADDRESS = '0x1CBa04d94F78973BC9d9Ba5E05E65Bb66285EE15';
+// V3 deployed by you on Celo mainnet.
+const DEFAULT_CONTRACT_ADDRESS = '0x01fc214949716709befFD6F3b588EF503C9088Fd';
 
 // Set NEXT_PUBLIC_ARCADE_CONTRACT_ADDRESS to your deployed V3 contract.
 export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_ARCADE_CONTRACT_ADDRESS || DEFAULT_CONTRACT_ADDRESS) as `0x${string}`;
