@@ -10,6 +10,7 @@ import { useMiniPay } from '@/hooks/useMiniPay';
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
 const MINI_PAY_ADD_CASH_URL = 'https://minipay.opera.com/add_cash';
 const MENTO_SWAP_URL = 'https://app.mento.org';
+const MINIPAY_GAS_TOKEN_SYMBOL = 'USDm';
 
 interface LeaderboardEntry { player: string; totalScore: bigint; }
 interface GameInfo { id: string; name: string; icon: string; color: string; desc: string; gameType: number; }
@@ -519,7 +520,9 @@ export default function GameArcade() {
       </div>
       {isMiniPay && (
         <div style={{ background: 'rgba(0,255,136,0.08)', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', border: '1px solid rgba(0,255,136,0.25)' }}>
-          <p style={{ color: '#0f8', fontSize: '11px', margin: 0 }}>MiniPay mode: gas uses your configured fee currency and game entry is paid in {STABLE_TOKEN_SYMBOL}.</p>
+          <p style={{ color: '#0f8', fontSize: '11px', margin: 0 }}>
+            MiniPay mode: game entry is paid in {STABLE_TOKEN_SYMBOL}; gas is paid in {MINIPAY_GAS_TOKEN_SYMBOL}.
+          </p>
         </div>
       )}
       {isConnected && (hasAccess ? (<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}><div style={{ background: 'rgba(0,255,136,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(0,255,136,0.3)' }}><p style={{ color: '#0f8', fontSize: '11px', margin: '0 0 2px' }}>YOUR SCORE</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>{userTotalScore.toLocaleString()}</p></div><div style={{ background: 'rgba(153,51,255,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(153,51,255,0.3)' }}><p style={{ color: '#93f', fontSize: '11px', margin: '0 0 2px' }}>YOUR RANK</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>#{userRank} {userRank === 1 ? '👑' : userRank === 2 ? '🥈' : userRank === 3 ? '🥉' : '🎮'}</p></div></div>) : (<div style={{ background: 'linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,200,100,0.1))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}><p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px' }}>💎 Deposit <strong style={{ color: '#fd0' }}>{entryFeeFormatted} {STABLE_TOKEN_SYMBOL}</strong> to play all games!</p><p style={{ color: '#888', fontSize: '11px', margin: '0 0 12px' }}>{hasEnoughUsdmAllowance ? '20% Creator Fee • 80% goes to Prize Pool' : 'Approve token first, then make your deposit'}</p><button onClick={hasEnoughUsdmAllowance ? handleDeposit : handleApproveUsdm} disabled={isPending || isConfirming} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '14px', padding: '12px 24px', color: '#fff', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,255,136,0.3)' }}>{isPending || isConfirming ? 'Processing...' : hasEnoughUsdmAllowance ? '🚀 Deposit & Play' : '✅ Approve Token'}</button><a href={MENTO_SWAP_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}>Swap CELO → Stablecoin</a></div>))}
