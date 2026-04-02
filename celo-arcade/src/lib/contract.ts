@@ -2,13 +2,36 @@ import { parseUnits } from 'viem';
 
 // V3 deployed by you on Celo mainnet.
 const DEFAULT_CONTRACT_ADDRESS = '0x01fc214949716709befFD6F3b588EF503C9088Fd';
+const DEFAULT_STABLE_TOKEN_ADDRESS = '0x765DE816845861e75A25fCA122bb6898B8B1282a'; // USDm
+const DEFAULT_STABLE_TOKEN_SYMBOL = 'USDm';
+const DEFAULT_STABLE_TOKEN_DECIMALS = 18;
+const DEFAULT_MINIPAY_FEE_CURRENCY = DEFAULT_STABLE_TOKEN_ADDRESS;
 
 // Set NEXT_PUBLIC_ARCADE_CONTRACT_ADDRESS to your deployed V3 contract.
 export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_ARCADE_CONTRACT_ADDRESS || DEFAULT_CONTRACT_ADDRESS) as `0x${string}`;
-export const USDM_TOKEN_ADDRESS = '0x765DE816845861e75A25fCA122bb6898B8B1282a' as const;
+
+const parsedTokenDecimals = Number.parseInt(
+  process.env.NEXT_PUBLIC_STABLE_TOKEN_DECIMALS || String(DEFAULT_STABLE_TOKEN_DECIMALS),
+  10
+);
+
+export const STABLE_TOKEN_ADDRESS = (
+  process.env.NEXT_PUBLIC_STABLE_TOKEN_ADDRESS || DEFAULT_STABLE_TOKEN_ADDRESS
+) as `0x${string}`;
+export const STABLE_TOKEN_SYMBOL = process.env.NEXT_PUBLIC_STABLE_TOKEN_SYMBOL || DEFAULT_STABLE_TOKEN_SYMBOL;
+export const STABLE_TOKEN_DECIMALS =
+  Number.isFinite(parsedTokenDecimals) && parsedTokenDecimals >= 0 && parsedTokenDecimals <= 18
+    ? parsedTokenDecimals
+    : DEFAULT_STABLE_TOKEN_DECIMALS;
+export const MINIPAY_FEE_CURRENCY = (
+  process.env.NEXT_PUBLIC_MINIPAY_FEE_CURRENCY || DEFAULT_MINIPAY_FEE_CURRENCY
+) as `0x${string}`;
+
+// Backward-compatible export name used across the app.
+export const USDM_TOKEN_ADDRESS = STABLE_TOKEN_ADDRESS;
 
 // Frontend fallback only; app now reads ENTRY_FEE from contract at runtime.
-export const ENTRY_FEE = parseUnits('0.01', 18);
+export const ENTRY_FEE = parseUnits('0.01', STABLE_TOKEN_DECIMALS);
 
 export const GameType = {
   CAR_RACE: 0,

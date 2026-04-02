@@ -4,7 +4,7 @@ import { useAccount, useConnect, useDisconnect, useReadContract, useWriteContrac
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { injected, walletConnect } from 'wagmi/connectors';
 import { formatEther, formatUnits } from 'viem';
-import { CONTRACT_ADDRESS, CONTRACT_ABI, GameType, Difficulty, ENTRY_FEE, USDM_TOKEN_ADDRESS } from '@/lib/contract';
+import { CONTRACT_ADDRESS, CONTRACT_ABI, GameType, Difficulty, ENTRY_FEE, USDM_TOKEN_ADDRESS, STABLE_TOKEN_DECIMALS, STABLE_TOKEN_SYMBOL, MINIPAY_FEE_CURRENCY } from '@/lib/contract';
 import { useMiniPay } from '@/hooks/useMiniPay';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
@@ -43,7 +43,7 @@ export default function GameArcade() {
   const { data: entryFeeV3 } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'entryFee' });
   const { data: entryFeeLegacy } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'ENTRY_FEE' });
   const celoBalance = balanceData ? Number(formatEther(balanceData.value)).toFixed(3) : '0.000';
-  const usdmBalance = usdmBalanceRaw ? Number(formatUnits(usdmBalanceRaw, 18)).toFixed(2) : '0.00';
+  const usdmBalance = usdmBalanceRaw ? Number(formatUnits(usdmBalanceRaw, STABLE_TOKEN_DECIMALS)).toFixed(2) : '0.00';
 
   const { data: prizePoolData } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getPrizePool' });
   const { data: playerStatsData, refetch: refetchPlayerStats } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getPlayerStats', args: address ? [address] : undefined });
@@ -51,14 +51,14 @@ export default function GameArcade() {
   const { data: arcadeStatsData } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getArcadeStats' });
   const { data: timeUntilClaimData } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getTimeUntilNextClaim' });
 
-  const prizePool = prizePoolData ? Number(formatEther(prizePoolData)) : 0;
+  const prizePool = prizePoolData ? Number(formatUnits(prizePoolData, STABLE_TOKEN_DECIMALS)) : 0;
   const hasAccess = playerStatsData?.[0] ?? false;
   const userTotalScore = playerStatsData?.[1] ? Number(playerStatsData[1]) : 0;
   const season = arcadeStatsData?.[3] ? Number(arcadeStatsData[3]) : 1;
   const totalPlayers = arcadeStatsData?.[1] ? Number(arcadeStatsData[1]) : 0;
   const timeUntilClaim = timeUntilClaimData ? Number(timeUntilClaimData) : 0;
   const effectiveEntryFee = entryFeeV3 ?? entryFeeLegacy ?? ENTRY_FEE;
-  const entryFeeFormatted = Number(formatUnits(effectiveEntryFee, 18)).toFixed(2);
+  const entryFeeFormatted = Number(formatUnits(effectiveEntryFee, STABLE_TOKEN_DECIMALS)).toFixed(2);
   const hasEnoughUsdmAllowance = (allowanceData ?? BigInt(0)) >= effectiveEntryFee;
 
   const leaderboard = leaderboardData ? ([...leaderboardData] as LeaderboardEntry[]).filter((e) => e.player !== '0x0000000000000000000000000000000000000000').map((e, i) => ({ rank: i + 1, addr: `${e.player.slice(0, 6)}...${e.player.slice(-4)}`, fullAddr: e.player, score: Number(e.totalScore), isYou: e.player.toLowerCase() === address?.toLowerCase() })) : [];
@@ -115,7 +115,7 @@ export default function GameArcade() {
         projectId,
         metadata: {
           name: 'Celo Game Arcade',
-          description: 'Play games and win USDm!',
+          description: 'Play games and win stablecoin rewards!',
           url: typeof window !== 'undefined' ? window.location.origin : '',
           icons: ['https://celo.org/favicon.ico'],
         },
@@ -146,7 +146,7 @@ export default function GameArcade() {
   };
 
   const writeContractWithMiniPayFee = (config: Record<string, unknown>) => {
-    const request = isMiniPay ? { ...config, feeCurrency: USDM_TOKEN_ADDRESS } : config;
+    const request = isMiniPay ? { ...config, feeCurrency: MINIPAY_FEE_CURRENCY } : config;
     writeContract(request as any);
   };
 
@@ -479,7 +479,7 @@ export default function GameArcade() {
   const Home = () => (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)', padding: '14px', fontFamily: 'system-ui' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <div><h1 style={{ fontSize: '24px', fontWeight: '900', background: 'linear-gradient(90deg,#0f8,#fd0,#f66,#93f)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>🎮 CELO ARCADE</h1><p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0' }}>Play • Compete • Win USDm!</p></div>
+        <div><h1 style={{ fontSize: '24px', fontWeight: '900', background: 'linear-gradient(90deg,#0f8,#fd0,#f66,#93f)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>🎮 CELO ARCADE</h1><p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0' }}>Play • Compete • Win stablecoin rewards!</p></div>
         {isConnected ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
@@ -493,7 +493,7 @@ export default function GameArcade() {
             </div>
             {isMiniPay && (
               <div style={{ background: 'rgba(0,255,136,0.15)', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(0,255,136,0.3)' }}>
-                <span style={{ color: '#0f8', fontSize: '11px', fontWeight: '600' }}>💵 {usdmBalance} USDm</span>
+                <span style={{ color: '#0f8', fontSize: '11px', fontWeight: '600' }}>💵 {usdmBalance} {STABLE_TOKEN_SYMBOL}</span>
               </div>
             )}
           </div>
@@ -508,7 +508,7 @@ export default function GameArcade() {
       <div style={{ background: 'linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,136,0,0.2))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '2px solid rgba(255,215,0,0.3)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-15px', right: '-15px', fontSize: '60px', opacity: '0.1' }}>🏆</div>
         <p style={{ color: '#fd0', fontSize: '12px', margin: '0 0 4px', fontWeight: '600' }}>💰 PRIZE POOL</p>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}><span style={{ fontSize: '36px', fontWeight: '900', color: '#fff' }}>{prizePool.toFixed(2)}</span><span style={{ fontSize: '18px', color: '#fd0', fontWeight: '600' }}>USDm</span></div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}><span style={{ fontSize: '36px', fontWeight: '900', color: '#fff' }}>{prizePool.toFixed(2)}</span><span style={{ fontSize: '18px', color: '#fd0', fontWeight: '600' }}>{STABLE_TOKEN_SYMBOL}</span></div>
         <p style={{ color: '#aaa', fontSize: '11px', margin: '6px 0 0' }}>🥇 #1 player claims ALL! Season {season}</p>
         {timeUntilClaim > 0 && (<p style={{ color: '#888', fontSize: '10px', margin: '4px 0 0' }}>⏰ Next claim in: {formatTimeUntilClaim(timeUntilClaim)}</p>)}
         {isTopPlayer && prizePool > 0 && (
@@ -519,10 +519,10 @@ export default function GameArcade() {
       </div>
       {isMiniPay && (
         <div style={{ background: 'rgba(0,255,136,0.08)', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', border: '1px solid rgba(0,255,136,0.25)' }}>
-          <p style={{ color: '#0f8', fontSize: '11px', margin: 0 }}>MiniPay mode: gas fees use USDm and game entry is paid in USDm.</p>
+          <p style={{ color: '#0f8', fontSize: '11px', margin: 0 }}>MiniPay mode: gas uses your configured fee currency and game entry is paid in {STABLE_TOKEN_SYMBOL}.</p>
         </div>
       )}
-      {isConnected && (hasAccess ? (<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}><div style={{ background: 'rgba(0,255,136,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(0,255,136,0.3)' }}><p style={{ color: '#0f8', fontSize: '11px', margin: '0 0 2px' }}>YOUR SCORE</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>{userTotalScore.toLocaleString()}</p></div><div style={{ background: 'rgba(153,51,255,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(153,51,255,0.3)' }}><p style={{ color: '#93f', fontSize: '11px', margin: '0 0 2px' }}>YOUR RANK</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>#{userRank} {userRank === 1 ? '👑' : userRank === 2 ? '🥈' : userRank === 3 ? '🥉' : '🎮'}</p></div></div>) : (<div style={{ background: 'linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,200,100,0.1))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}><p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px' }}>💎 Deposit <strong style={{ color: '#fd0' }}>{entryFeeFormatted} USDm</strong> to play all games!</p><p style={{ color: '#888', fontSize: '11px', margin: '0 0 12px' }}>{hasEnoughUsdmAllowance ? '20% Creator Fee • 80% goes to Prize Pool' : 'Approve USDm first, then make your deposit'}</p><button onClick={hasEnoughUsdmAllowance ? handleDeposit : handleApproveUsdm} disabled={isPending || isConfirming} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '14px', padding: '12px 24px', color: '#fff', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,255,136,0.3)' }}>{isPending || isConfirming ? 'Processing...' : hasEnoughUsdmAllowance ? '🚀 Deposit & Play' : '✅ Approve USDm'}</button><a href={MENTO_SWAP_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}>Swap CELO → USDm</a></div>))}
+      {isConnected && (hasAccess ? (<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}><div style={{ background: 'rgba(0,255,136,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(0,255,136,0.3)' }}><p style={{ color: '#0f8', fontSize: '11px', margin: '0 0 2px' }}>YOUR SCORE</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>{userTotalScore.toLocaleString()}</p></div><div style={{ background: 'rgba(153,51,255,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(153,51,255,0.3)' }}><p style={{ color: '#93f', fontSize: '11px', margin: '0 0 2px' }}>YOUR RANK</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>#{userRank} {userRank === 1 ? '👑' : userRank === 2 ? '🥈' : userRank === 3 ? '🥉' : '🎮'}</p></div></div>) : (<div style={{ background: 'linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,200,100,0.1))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}><p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px' }}>💎 Deposit <strong style={{ color: '#fd0' }}>{entryFeeFormatted} {STABLE_TOKEN_SYMBOL}</strong> to play all games!</p><p style={{ color: '#888', fontSize: '11px', margin: '0 0 12px' }}>{hasEnoughUsdmAllowance ? '20% Creator Fee • 80% goes to Prize Pool' : 'Approve token first, then make your deposit'}</p><button onClick={hasEnoughUsdmAllowance ? handleDeposit : handleApproveUsdm} disabled={isPending || isConfirming} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '14px', padding: '12px 24px', color: '#fff', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,255,136,0.3)' }}>{isPending || isConfirming ? 'Processing...' : hasEnoughUsdmAllowance ? '🚀 Deposit & Play' : '✅ Approve Token'}</button><a href={MENTO_SWAP_URL} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: '10px', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}>Swap CELO → Stablecoin</a></div>))}
       {!isConnected && (
         <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '20px', marginBottom: '16px', textAlign: 'center' }}>
           <p style={{ color: '#888', fontSize: '14px', margin: 0 }}>{hideConnectWalletButton ? 'MiniPay detected. Connecting wallet automatically...' : 'Connect your wallet to start playing!'}</p>
@@ -540,13 +540,13 @@ export default function GameArcade() {
             rel="noopener noreferrer"
             style={{ display: 'inline-block', marginTop: '10px', padding: '10px 14px', borderRadius: '12px', background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', color: '#fff', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}
           >
-            Swap CELO → USDm
+            Swap CELO → Stablecoin
           </a>
         </div>
       )}
-      <div style={{ marginBottom: '16px' }}><h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: '0 0 10px' }}>🎯 Choose Your Game</h2><div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{games.map((g) => (<button key={g.id} onClick={() => { if (!isConnected) { alert(hideConnectWalletButton ? 'MiniPay is still connecting your wallet. Please wait a moment and try again.' : 'Please connect your wallet first!'); return; } if (!hasAccess) { alert(`Please approve and deposit ${entryFeeFormatted} USDm to play!`); return; } setGame(g); setShowSelect(true); }} style={{ background: `linear-gradient(135deg,${g.color}22,${g.color}11)`, borderRadius: '14px', padding: '12px', border: `1px solid ${g.color}44`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', opacity: hasAccess ? 1 : 0.6 }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `linear-gradient(135deg,${g.color},${g.color}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', boxShadow: `0 6px 15px ${g.color}44` }}>{g.icon}</div><div style={{ flex: 1 }}><h3 style={{ color: '#fff', fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>{g.name}</h3><p style={{ color: '#888', fontSize: '11px', margin: 0 }}>{g.desc}</p></div><div style={{ color: g.color, fontSize: '20px' }}>▶</div></button>))}</div></div>
+      <div style={{ marginBottom: '16px' }}><h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: '0 0 10px' }}>🎯 Choose Your Game</h2><div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{games.map((g) => (<button key={g.id} onClick={() => { if (!isConnected) { alert(hideConnectWalletButton ? 'MiniPay is still connecting your wallet. Please wait a moment and try again.' : 'Please connect your wallet first!'); return; } if (!hasAccess) { alert(`Please approve and deposit ${entryFeeFormatted} ${STABLE_TOKEN_SYMBOL} to play!`); return; } setGame(g); setShowSelect(true); }} style={{ background: `linear-gradient(135deg,${g.color}22,${g.color}11)`, borderRadius: '14px', padding: '12px', border: `1px solid ${g.color}44`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', opacity: hasAccess ? 1 : 0.6 }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `linear-gradient(135deg,${g.color},${g.color}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', boxShadow: `0 6px 15px ${g.color}44` }}>{g.icon}</div><div style={{ flex: 1 }}><h3 style={{ color: '#fff', fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>{g.name}</h3><p style={{ color: '#888', fontSize: '11px', margin: 0 }}>{g.desc}</p></div><div style={{ color: g.color, fontSize: '20px' }}>▶</div></button>))}</div></div>
       <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '14px' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>🏆 Leaderboard</h2><span style={{ color: '#888', fontSize: '11px' }}>{totalPlayers} players</span></div>{leaderboard.length > 0 ? leaderboard.slice(0, 5).map((e, i) => (<div key={i} style={{ display: 'flex', alignItems: 'center', padding: '8px', borderRadius: '8px', marginBottom: '6px', background: e.isYou ? 'rgba(0,255,136,0.15)' : 'transparent', border: e.isYou ? '1px solid rgba(0,255,136,0.3)' : '1px solid transparent' }}><span style={{ fontSize: '18px', marginRight: '10px' }}>{e.rank === 1 ? '👑' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '🎮'}</span><span style={{ color: e.isYou ? '#0f8' : '#fff', flex: 1, fontSize: '13px', fontWeight: e.isYou ? '700' : '400' }}>{e.addr} {e.isYou && '(You)'}</span><span style={{ color: '#fd0', fontWeight: '700', fontSize: '13px' }}>{e.score.toLocaleString()}</span></div>)) : (<p style={{ color: '#888', fontSize: '13px', textAlign: 'center', margin: '20px 0' }}>No players yet. Be the first!</p>)}</div>
-      <p style={{ textAlign: 'center', color: '#666', fontSize: '10px', marginTop: '14px' }}>💚 Powered by Celo • Entry: {entryFeeFormatted} USDm</p>
+      <p style={{ textAlign: 'center', color: '#666', fontSize: '10px', marginTop: '14px' }}>💚 Powered by Celo • Entry: {entryFeeFormatted} {STABLE_TOKEN_SYMBOL}</p>
       <p style={{ textAlign: 'center', color: '#888', fontSize: '11px', marginTop: '8px' }}>
         <a href="/privacy" style={{ color: '#9df', textDecoration: 'none' }}>Privacy</a>
         {' • '}
