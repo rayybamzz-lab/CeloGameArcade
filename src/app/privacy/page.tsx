@@ -44,8 +44,8 @@ export default function PrivacyPage() {
         <h2>Contact</h2>
         <p>
           For privacy questions, contact us at{' '}
-          <a href="mailto:support@celogamearcade.com" style={{ color: '#9df' }}>
-            support@celogamearcade.com
+          <a href="mailto:bamzzstudio@gmail.com" style={{ color: '#9df' }}>
+            bamzzstudio@gmail.com
           </a>
           .
         </p>

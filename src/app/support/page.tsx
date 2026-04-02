@@ -25,8 +25,8 @@ export default function SupportPage() {
         <ul>
           <li>
             Email:{' '}
-            <a href="mailto:support@celogamearcade.com" style={{ color: '#9df' }}>
-              support@celogamearcade.com
+            <a href="mailto:bamzzstudio@gmail.com" style={{ color: '#9df' }}>
+              bamzzstudio@gmail.com
             </a>
           </li>
           <li>
