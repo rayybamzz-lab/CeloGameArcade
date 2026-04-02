@@ -480,7 +480,19 @@ export default function GameArcade() {
   const Home = () => (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)', padding: '14px', fontFamily: 'system-ui' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <div><h1 style={{ fontSize: '24px', fontWeight: '900', background: 'linear-gradient(90deg,#0f8,#fd0,#f66,#93f)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>🎮 CELO ARCADE</h1><p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0' }}>Play • Compete • Win stablecoin rewards!</p></div>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <img
+            src="/logo-glow.png"
+            alt="Celo Arcade"
+            style={{
+              width: 'min(100%, 360px)',
+              height: 'auto',
+              display: 'block',
+              filter: 'drop-shadow(0 0 12px rgba(120,170,255,0.4))',
+            }}
+          />
+          <p style={{ color: '#98a3bf', fontSize: '11px', margin: '4px 0 0 2px', fontWeight: 600 }}>Play • Compete • Win stablecoin rewards!</p>
+        </div>
         {isConnected ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
             <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
