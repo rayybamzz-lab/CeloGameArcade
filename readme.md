@@ -32,8 +32,8 @@ A blockchain-powered gaming arcade built as a Farcaster mini app on the Celo net
 
 ## 🚀 Quick Start
 ```bash
-git clone https://github.com/YOUR_USERNAME/celo-game-arcade.git
-cd celo-game-arcade
+git clone https://github.com/AdekunleBamz/CeloGameArcade.git
+cd CeloGameArcade
 npm install
 npm run dev
 ```
