@@ -480,18 +480,36 @@ export default function GameArcade() {
   const Home = () => (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)', padding: '14px', fontFamily: 'system-ui' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', minWidth: 0 }}>
           <img
-            src="/logo-glow.png"
+            src="/brand-mark.svg"
             alt="Celo Arcade"
             style={{
-              width: 'min(100%, 360px)',
-              height: 'auto',
+              width: '56px',
+              height: '56px',
               display: 'block',
-              filter: 'drop-shadow(0 0 12px rgba(120,170,255,0.4))',
+              flexShrink: 0,
             }}
           />
-          <p style={{ color: '#98a3bf', fontSize: '11px', margin: '4px 0 0 2px', fontWeight: 600 }}>Play • Compete • Win stablecoin rewards!</p>
+          <div style={{ minWidth: 0 }}>
+            <h1
+              style={{
+                margin: 0,
+                fontSize: '27px',
+                lineHeight: 1,
+                fontWeight: 900,
+                letterSpacing: '1.4px',
+                textTransform: 'uppercase',
+                fontFamily: "'Arial Black', 'Trebuchet MS', sans-serif",
+                background: 'linear-gradient(90deg,#c7ecff 0%, #dab8ff 38%, #ff9cc9 72%, #ffd6a3 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              Celo Arcade
+            </h1>
+            <p style={{ color: '#98a3bf', fontSize: '11px', margin: '5px 0 0', fontWeight: 600 }}>Play. Compete. Win stablecoin rewards.</p>
+          </div>
         </div>
         {isConnected ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
