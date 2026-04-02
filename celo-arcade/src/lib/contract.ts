@@ -7,7 +7,7 @@ export const CONTRACT_ADDRESS = (process.env.NEXT_PUBLIC_ARCADE_CONTRACT_ADDRESS
 export const USDM_TOKEN_ADDRESS = '0x765DE816845861e75A25fCA122bb6898B8B1282a' as const;
 
 // Frontend fallback only; app now reads ENTRY_FEE from contract at runtime.
-export const ENTRY_FEE = parseUnits('0.1', 18);
+export const ENTRY_FEE = parseUnits('0.01', 18);
 
 export const GameType = {
   CAR_RACE: 0,

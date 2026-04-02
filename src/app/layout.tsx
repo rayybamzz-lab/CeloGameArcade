@@ -21,7 +21,7 @@ const frame = {
 
 export const metadata: Metadata = {
   title: "Celo Game Arcade",
-  description: "Play classic arcade games and compete for CELO prizes! 0.1 CELO entry, daily prizes for top scorers.",
+  description: "Play classic arcade games and compete for USDm prizes! 0.01 USDm entry on Celo mainnet.",
   metadataBase: new URL(APP_URL),
   icons: {
     icon: "/icon-1024.png",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "Celo Game Arcade",
-    description: "Play classic arcade games and compete for CELO prizes! 0.1 CELO entry, daily prizes for top scorers.",
+    description: "Play classic arcade games and compete for USDm prizes! 0.01 USDm entry on Celo mainnet.",
     url: APP_URL,
     siteName: "Celo Game Arcade",
     images: [
@@ -47,7 +47,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Celo Game Arcade",
-    description: "Play classic arcade games and compete for CELO prizes! 0.1 CELO entry, daily prizes for top scorers.",
+    description: "Play classic arcade games and compete for USDm prizes! 0.01 USDm entry on Celo mainnet.",
     images: [`${APP_URL}/image-3-2.png`],
   },
   other: {
