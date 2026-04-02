@@ -21,7 +21,7 @@ const config = createConfig({
       projectId,
       metadata: {
         name: 'Celo Game Arcade',
-        description: 'Play games and win CELO!',
+        description: 'Play games and win USDm!',
         url: typeof window !== 'undefined' ? window.location.origin : '',
         icons: ['https://celo.org/favicon.ico'],
       },

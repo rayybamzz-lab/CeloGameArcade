@@ -1,12 +1,24 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAccount, useConnect, useDisconnect, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { formatEther } from 'viem';
-import { CONTRACT_ADDRESS, CONTRACT_ABI, GameType, Difficulty, ENTRY_FEE } from '@/lib/contract';
+import { useAccount, useConnect, useDisconnect, useReadContract, useWriteContract, useWaitForTransactionReceipt, useBalance } from 'wagmi';
+import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
+import { injected, walletConnect } from 'wagmi/connectors';
+import { formatEther, formatUnits } from 'viem';
+import { CONTRACT_ADDRESS, CONTRACT_ABI, GameType, Difficulty, ENTRY_FEE, USDM_TOKEN_ADDRESS } from '@/lib/contract';
+import { useMiniPay } from '@/hooks/useMiniPay';
+
+const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
+const MINI_PAY_ADD_CASH_URL = 'https://minipay.opera.com/add_cash';
 
 interface LeaderboardEntry { player: string; totalScore: bigint; }
 interface GameInfo { id: string; name: string; icon: string; color: string; desc: string; gameType: number; }
 interface DifficultyInfo { id: string; name: string; mult: string; color: string; desc: string; value: number; }
+const ERC20_ABI = [
+  { inputs: [{ name: 'account', type: 'address' }], name: 'balanceOf', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  { inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], name: 'allowance', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ name: '', type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
+] as const;
+const MAX_USDM_APPROVAL = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 
 export default function GameArcade() {
   const [view, setView] = useState<string>('home');
@@ -14,23 +26,38 @@ export default function GameArcade() {
   const [diff, setDiff] = useState<string>('medium');
   const [showSelect, setShowSelect] = useState(false);
   const [lastScore, setLastScore] = useState<{ raw: number; final: number; diff: string } | null>(null);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [isInFarcaster, setIsInFarcaster] = useState(false);
 
   const { address, isConnected } = useAccount();
-  const { connect, connectors } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { connect } = useConnect();
+  const { isMiniPay, hideConnectWalletButton } = useMiniPay();
+  const { disconnectAsync } = useDisconnect();
   const { writeContract, data: hash, isPending } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({ hash });
+
+  const { data: balanceData } = useBalance({ address: address });
+  const { data: usdmBalanceRaw } = useReadContract({ address: USDM_TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'balanceOf', args: address ? [address] : undefined });
+  const { data: allowanceData, refetch: refetchAllowance } = useReadContract({ address: USDM_TOKEN_ADDRESS, abi: ERC20_ABI, functionName: 'allowance', args: address ? [address, CONTRACT_ADDRESS] : undefined });
+  const { data: entryFeeOnChain } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'ENTRY_FEE' });
+  const celoBalance = balanceData ? Number(formatEther(balanceData.value)).toFixed(3) : '0.000';
+  const usdmBalance = usdmBalanceRaw ? Number(formatUnits(usdmBalanceRaw, 18)).toFixed(2) : '0.00';
 
   const { data: prizePoolData } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getPrizePool' });
   const { data: playerStatsData, refetch: refetchPlayerStats } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getPlayerStats', args: address ? [address] : undefined });
   const { data: leaderboardData, refetch: refetchLeaderboard } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getLeaderboard' });
   const { data: arcadeStatsData } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getArcadeStats' });
+  const { data: timeUntilClaimData } = useReadContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'getTimeUntilNextClaim' });
 
   const prizePool = prizePoolData ? Number(formatEther(prizePoolData)) : 0;
   const hasAccess = playerStatsData?.[0] ?? false;
   const userTotalScore = playerStatsData?.[1] ? Number(playerStatsData[1]) : 0;
   const season = arcadeStatsData?.[3] ? Number(arcadeStatsData[3]) : 1;
   const totalPlayers = arcadeStatsData?.[1] ? Number(arcadeStatsData[1]) : 0;
+  const timeUntilClaim = timeUntilClaimData ? Number(timeUntilClaimData) : 0;
+  const effectiveEntryFee = entryFeeOnChain ?? ENTRY_FEE;
+  const entryFeeFormatted = Number(formatUnits(effectiveEntryFee, 18)).toFixed(2);
+  const hasEnoughUsdmAllowance = (allowanceData ?? BigInt(0)) >= effectiveEntryFee;
 
   const leaderboard = leaderboardData ? ([...leaderboardData] as LeaderboardEntry[]).filter((e) => e.player !== '0x0000000000000000000000000000000000000000').map((e, i) => ({ rank: i + 1, addr: `${e.player.slice(0, 6)}...${e.player.slice(-4)}`, fullAddr: e.player, score: Number(e.totalScore), isYou: e.player.toLowerCase() === address?.toLowerCase() })) : [];
   const userRank = leaderboard.findIndex((e) => e.isYou) + 1 || '-';
@@ -48,10 +75,98 @@ export default function GameArcade() {
     { id: 'space', name: 'Space Blaster', icon: '🚀', color: '#9933ff', desc: 'Destroy aliens!', gameType: GameType.SPACE_SHOOTER },
   ];
 
-  const handleDeposit = () => { writeContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'depositToPlay', value: ENTRY_FEE }); };
+  // Check if inside Farcaster on mount
+  useEffect(() => {
+    const checkFarcaster = async () => {
+      try {
+        const { sdk } = await import('@farcaster/miniapp-sdk');
+        const inMiniApp = await sdk.isInMiniApp();
+        setIsInFarcaster(inMiniApp);
+        console.log('Is in Farcaster:', inMiniApp);
+      } catch (e) {
+        console.log('Farcaster check failed:', e);
+        setIsInFarcaster(false);
+      }
+    };
+    checkFarcaster();
+  }, []);
+
+  // Connect with Farcaster wallet
+  const connectFarcaster = () => {
+    console.log('Connecting with Farcaster...');
+    connect({ connector: farcasterMiniApp() });
+    setShowWalletModal(false);
+  };
+
+  // Connect with browser wallet (MetaMask, etc.)
+  const connectInjected = () => {
+    console.log('Connecting with browser wallet...');
+    connect({ connector: injected() });
+    setShowWalletModal(false);
+  };
+
+  // Connect with WalletConnect
+  const connectWalletConnect = () => {
+    console.log('Connecting with WalletConnect...');
+    connect({ 
+      connector: walletConnect({ 
+        projectId,
+        metadata: {
+          name: 'Celo Game Arcade',
+          description: 'Play games and win USDm!',
+          url: typeof window !== 'undefined' ? window.location.origin : '',
+          icons: ['https://celo.org/favicon.ico'],
+        },
+      }) 
+    });
+    setShowWalletModal(false);
+  };
+
+  // Handle connect button click
+  const handleConnectClick = () => {
+    if (isMiniPay) {
+      connectInjected();
+      return;
+    }
+    if (isInFarcaster) {
+      connectFarcaster();
+    } else {
+      setShowWalletModal(true);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    try {
+      await disconnectAsync();
+    } catch (e) {
+      console.error('Disconnect error:', e);
+    }
+  };
+
+  const writeContractWithMiniPayFee = (config: Record<string, unknown>) => {
+    const request = isMiniPay ? { ...config, feeCurrency: USDM_TOKEN_ADDRESS } : config;
+    writeContract(request as any);
+  };
+
+  const handleApproveUsdm = () => {
+    writeContractWithMiniPayFee({
+      address: USDM_TOKEN_ADDRESS,
+      abi: ERC20_ABI,
+      functionName: 'approve',
+      args: [CONTRACT_ADDRESS, MAX_USDM_APPROVAL],
+    });
+  };
+
+  const handleDeposit = () => {
+    writeContractWithMiniPayFee({
+      address: CONTRACT_ADDRESS,
+      abi: CONTRACT_ABI,
+      functionName: 'depositToPlay',
+    });
+  };
 
   const handleSubmitScore = async (rawScore: number, gameType: number, difficulty: number) => {
-    try { writeContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'submitScore', args: [gameType, BigInt(rawScore), difficulty] }); } catch (e) { console.error(e); }
+    try { writeContractWithMiniPayFee({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'submitScore', args: [gameType, BigInt(rawScore), difficulty] }); } catch (e) { console.error(e); }
   };
 
   const handleEnd = (score: number) => {
@@ -63,10 +178,21 @@ export default function GameArcade() {
     setView('result');
   };
 
-  useEffect(() => { if (isSuccess) { refetchPlayerStats(); refetchLeaderboard(); } }, [isSuccess, refetchPlayerStats, refetchLeaderboard]);
+  useEffect(() => { if (isSuccess) { refetchPlayerStats(); refetchLeaderboard(); refetchAllowance(); } }, [isSuccess, refetchPlayerStats, refetchLeaderboard, refetchAllowance]);
 
-  const handleClaimPrize = () => { writeContract({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'claimPrizePool' }); };
+  const handleClaimPrize = () => { writeContractWithMiniPayFee({ address: CONTRACT_ADDRESS, abi: CONTRACT_ABI, functionName: 'claimPrizePool' }); };
   const isTopPlayer = leaderboard[0]?.fullAddr?.toLowerCase() === address?.toLowerCase();
+  const canClaim = isTopPlayer && prizePool > 0 && timeUntilClaim === 0;
+
+  const formatTimeUntilClaim = (seconds: number) => {
+    if (seconds === 0) return 'Now';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    if (days > 0) return `${days}d ${hours}h`;
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+  };
 
   // CAR GAME
   const CarGame = ({ onEnd }: { onEnd: (score: number) => void }) => {
@@ -269,7 +395,7 @@ export default function GameArcade() {
     );
   };
 
-  // SPACE BLASTER (FIXED!)
+  // SPACE BLASTER
   const SpaceGame = ({ onEnd }: { onEnd: (score: number) => void }) => {
     const [sx, setSx] = useState(50);
     const [bullets, setBullets] = useState<any[]>([]);
@@ -278,8 +404,8 @@ export default function GameArcade() {
     const [score, setScore] = useState(0);
     const [lives, setLives] = useState(diff === 'easy' ? 5 : diff === 'medium' ? 3 : 2);
     const ref = useRef<number | null>(null);
-    const sxRef = useRef(sx), scoreRef = useRef(score), livesRef = useRef(lives), stateRef = useRef(state);
-    sxRef.current = sx; scoreRef.current = score; livesRef.current = lives; stateRef.current = state;
+    const sxRef = useRef(sx), scoreRef = useRef(score), stateRef = useRef(state);
+    sxRef.current = sx; scoreRef.current = score; stateRef.current = state;
 
     const eSpd = diff === 'easy' ? 0.5 : diff === 'medium' ? 0.8 : 1.2;
     const spawnR = diff === 'easy' ? 0.02 : diff === 'medium' ? 0.03 : 0.04;
@@ -351,25 +477,70 @@ export default function GameArcade() {
   const Home = () => (
     <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg,#0f0c29,#302b63,#24243e)', padding: '14px', fontFamily: 'system-ui' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '8px' }}>
-        <div><h1 style={{ fontSize: '24px', fontWeight: '900', background: 'linear-gradient(90deg,#0f8,#fd0,#f66,#93f)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>🎮 CELO ARCADE</h1><p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0' }}>Play • Compete • Win CELO!</p></div>
-        {isConnected ? (<div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}><div style={{ background: 'rgba(0,255,136,0.2)', padding: '6px 10px', borderRadius: '16px', border: '1px solid #0f8' }}><span style={{ color: '#0f8', fontSize: '11px' }}>🟢 {address?.slice(0, 6)}...{address?.slice(-4)}</span></div><button onClick={() => disconnect()} style={{ background: 'rgba(255,68,68,0.2)', border: '1px solid #f44', borderRadius: '16px', padding: '6px 10px', color: '#f44', fontSize: '11px', cursor: 'pointer' }}>Disconnect</button></div>) : (<button onClick={() => connect({ connector: connectors[0] })} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '16px', padding: '10px 16px', color: '#fff', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>Connect Wallet</button>)}
+        <div><h1 style={{ fontSize: '24px', fontWeight: '900', background: 'linear-gradient(90deg,#0f8,#fd0,#f66,#93f)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', margin: 0 }}>🎮 CELO ARCADE</h1><p style={{ color: '#888', fontSize: '11px', margin: '2px 0 0' }}>Play • Compete • Win USDm!</p></div>
+        {isConnected ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'flex-end' }}>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div style={{ background: 'rgba(0,255,136,0.2)', padding: '6px 10px', borderRadius: '16px', border: '1px solid #0f8' }}>
+                <span style={{ color: '#0f8', fontSize: '11px' }}>🟢 {address?.slice(0, 6)}...{address?.slice(-4)}</span>
+              </div>
+              <button onClick={handleDisconnect} style={{ background: 'rgba(255,68,68,0.2)', border: '1px solid #f44', borderRadius: '16px', padding: '6px 10px', color: '#f44', fontSize: '11px', cursor: 'pointer' }}>Disconnect</button>
+            </div>
+            <div style={{ background: 'rgba(255,215,0,0.15)', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(255,215,0,0.3)' }}>
+              <span style={{ color: '#fd0', fontSize: '11px', fontWeight: '600' }}>💰 {celoBalance} CELO</span>
+            </div>
+            {isMiniPay && (
+              <div style={{ background: 'rgba(0,255,136,0.15)', padding: '4px 10px', borderRadius: '12px', border: '1px solid rgba(0,255,136,0.3)' }}>
+                <span style={{ color: '#0f8', fontSize: '11px', fontWeight: '600' }}>💵 {usdmBalance} USDm</span>
+              </div>
+            )}
+          </div>
+        ) : hideConnectWalletButton ? (
+          <div style={{ background: 'rgba(0,255,136,0.15)', border: '1px solid rgba(0,255,136,0.4)', borderRadius: '16px', padding: '8px 12px', color: '#0f8', fontSize: '11px', fontWeight: '700' }}>
+            MiniPay wallet detected
+          </div>
+        ) : (
+          <button onClick={handleConnectClick} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '16px', padding: '10px 16px', color: '#fff', fontSize: '13px', fontWeight: 'bold', cursor: 'pointer' }}>Connect Wallet</button>
+        )}
       </div>
       <div style={{ background: 'linear-gradient(135deg,rgba(255,215,0,0.2),rgba(255,136,0,0.2))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '2px solid rgba(255,215,0,0.3)', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: '-15px', right: '-15px', fontSize: '60px', opacity: '0.1' }}>🏆</div>
         <p style={{ color: '#fd0', fontSize: '12px', margin: '0 0 4px', fontWeight: '600' }}>💰 PRIZE POOL</p>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}><span style={{ fontSize: '36px', fontWeight: '900', color: '#fff' }}>{prizePool.toFixed(3)}</span><span style={{ fontSize: '18px', color: '#fd0', fontWeight: '600' }}>CELO</span></div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}><span style={{ fontSize: '36px', fontWeight: '900', color: '#fff' }}>{prizePool.toFixed(2)}</span><span style={{ fontSize: '18px', color: '#fd0', fontWeight: '600' }}>USDm</span></div>
         <p style={{ color: '#aaa', fontSize: '11px', margin: '6px 0 0' }}>🥇 #1 player claims ALL! Season {season}</p>
-        {isTopPlayer && prizePool > 0 && (<button onClick={handleClaimPrize} disabled={isPending || isConfirming} style={{ marginTop: '10px', background: 'linear-gradient(135deg,#fd0,#f80)', border: 'none', borderRadius: '12px', padding: '10px 20px', color: '#000', fontSize: '14px', fontWeight: 'bold', cursor: 'pointer' }}>{isPending || isConfirming ? 'Claiming...' : '🏆 Claim Prize!'}</button>)}
+        {timeUntilClaim > 0 && (<p style={{ color: '#888', fontSize: '10px', margin: '4px 0 0' }}>⏰ Next claim in: {formatTimeUntilClaim(timeUntilClaim)}</p>)}
+        {isTopPlayer && prizePool > 0 && (
+          <button onClick={handleClaimPrize} disabled={isPending || isConfirming || !canClaim} style={{ marginTop: '10px', background: canClaim ? 'linear-gradient(135deg,#fd0,#f80)' : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', padding: '10px 20px', color: canClaim ? '#000' : '#666', fontSize: '14px', fontWeight: 'bold', cursor: canClaim ? 'pointer' : 'not-allowed' }}>
+            {isPending || isConfirming ? 'Claiming...' : canClaim ? '🏆 Claim Prize!' : `⏰ Wait ${formatTimeUntilClaim(timeUntilClaim)}`}
+          </button>
+        )}
       </div>
-      {isConnected && (hasAccess ? (<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}><div style={{ background: 'rgba(0,255,136,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(0,255,136,0.3)' }}><p style={{ color: '#0f8', fontSize: '11px', margin: '0 0 2px' }}>YOUR SCORE</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>{userTotalScore.toLocaleString()}</p></div><div style={{ background: 'rgba(153,51,255,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(153,51,255,0.3)' }}><p style={{ color: '#93f', fontSize: '11px', margin: '0 0 2px' }}>YOUR RANK</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>#{userRank} {userRank === 1 ? '👑' : userRank === 2 ? '🥈' : userRank === 3 ? '🥉' : '🎮'}</p></div></div>) : (<div style={{ background: 'linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,200,100,0.1))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}><p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px' }}>💎 Deposit <strong style={{ color: '#fd0' }}>0.1 CELO</strong> to play all games!</p><p style={{ color: '#888', fontSize: '11px', margin: '0 0 12px' }}>20% Creator Fee • 80% goes to Prize Pool</p><button onClick={handleDeposit} disabled={isPending || isConfirming} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '14px', padding: '12px 24px', color: '#fff', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,255,136,0.3)' }}>{isPending || isConfirming ? 'Processing...' : '🚀 Deposit & Play'}</button></div>))}
-      {!isConnected && (<div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '20px', marginBottom: '16px', textAlign: 'center' }}><p style={{ color: '#888', fontSize: '14px', margin: 0 }}>Connect your wallet to start playing!</p></div>)}
-      <div style={{ marginBottom: '16px' }}><h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: '0 0 10px' }}>🎯 Choose Your Game</h2><div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{games.map((g) => (<button key={g.id} onClick={() => { if (!isConnected) { alert('Please connect your wallet first!'); return; } if (!hasAccess) { alert('Please deposit 0.1 CELO to play!'); return; } setGame(g); setShowSelect(true); }} style={{ background: `linear-gradient(135deg,${g.color}22,${g.color}11)`, borderRadius: '14px', padding: '12px', border: `1px solid ${g.color}44`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', opacity: hasAccess ? 1 : 0.6 }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `linear-gradient(135deg,${g.color},${g.color}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', boxShadow: `0 6px 15px ${g.color}44` }}>{g.icon}</div><div style={{ flex: 1 }}><h3 style={{ color: '#fff', fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>{g.name}</h3><p style={{ color: '#888', fontSize: '11px', margin: 0 }}>{g.desc}</p></div><div style={{ color: g.color, fontSize: '20px' }}>▶</div></button>))}</div></div>
+      {isMiniPay && (
+        <div style={{ background: 'rgba(0,255,136,0.08)', borderRadius: '12px', padding: '10px 12px', marginBottom: '12px', border: '1px solid rgba(0,255,136,0.25)' }}>
+          <p style={{ color: '#0f8', fontSize: '11px', margin: 0 }}>MiniPay mode: gas fees use USDm and game entry is paid in USDm.</p>
+        </div>
+      )}
+      {isConnected && (hasAccess ? (<div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '16px' }}><div style={{ background: 'rgba(0,255,136,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(0,255,136,0.3)' }}><p style={{ color: '#0f8', fontSize: '11px', margin: '0 0 2px' }}>YOUR SCORE</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>{userTotalScore.toLocaleString()}</p></div><div style={{ background: 'rgba(153,51,255,0.1)', borderRadius: '14px', padding: '12px', border: '1px solid rgba(153,51,255,0.3)' }}><p style={{ color: '#93f', fontSize: '11px', margin: '0 0 2px' }}>YOUR RANK</p><p style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: 0 }}>#{userRank} {userRank === 1 ? '👑' : userRank === 2 ? '🥈' : userRank === 3 ? '🥉' : '🎮'}</p></div></div>) : (<div style={{ background: 'linear-gradient(135deg,rgba(0,255,136,0.2),rgba(0,200,100,0.1))', borderRadius: '16px', padding: '16px', marginBottom: '16px', border: '1px solid rgba(0,255,136,0.3)', textAlign: 'center' }}><p style={{ color: '#fff', fontSize: '14px', margin: '0 0 10px' }}>💎 Deposit <strong style={{ color: '#fd0' }}>{entryFeeFormatted} USDm</strong> to play all games!</p><p style={{ color: '#888', fontSize: '11px', margin: '0 0 12px' }}>{hasEnoughUsdmAllowance ? '20% Creator Fee • 80% goes to Prize Pool' : 'Approve USDm first, then make your deposit'}</p><button onClick={hasEnoughUsdmAllowance ? handleDeposit : handleApproveUsdm} disabled={isPending || isConfirming} style={{ background: 'linear-gradient(135deg,#0f8,#0a6)', border: 'none', borderRadius: '14px', padding: '12px 24px', color: '#fff', fontSize: '15px', fontWeight: 'bold', cursor: 'pointer', boxShadow: '0 8px 20px rgba(0,255,136,0.3)' }}>{isPending || isConfirming ? 'Processing...' : hasEnoughUsdmAllowance ? '🚀 Deposit & Play' : '✅ Approve USDm'}</button></div>))}
+      {!isConnected && (
+        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '20px', marginBottom: '16px', textAlign: 'center' }}>
+          <p style={{ color: '#888', fontSize: '14px', margin: 0 }}>{hideConnectWalletButton ? 'MiniPay detected. Connecting wallet automatically...' : 'Connect your wallet to start playing!'}</p>
+          {hideConnectWalletButton && (
+            <a
+              href={MINI_PAY_ADD_CASH_URL}
+              style={{ display: 'inline-block', marginTop: '12px', padding: '10px 14px', borderRadius: '12px', background: 'linear-gradient(135deg,#ffd700,#ff9800)', color: '#111', fontSize: '12px', fontWeight: '700', textDecoration: 'none' }}
+            >
+              Add cash in MiniPay
+            </a>
+          )}
+        </div>
+      )}
+      <div style={{ marginBottom: '16px' }}><h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: '0 0 10px' }}>🎯 Choose Your Game</h2><div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>{games.map((g) => (<button key={g.id} onClick={() => { if (!isConnected) { alert(hideConnectWalletButton ? 'MiniPay is still connecting your wallet. Please wait a moment and try again.' : 'Please connect your wallet first!'); return; } if (!hasAccess) { alert(`Please approve and deposit ${entryFeeFormatted} USDm to play!`); return; } setGame(g); setShowSelect(true); }} style={{ background: `linear-gradient(135deg,${g.color}22,${g.color}11)`, borderRadius: '14px', padding: '12px', border: `1px solid ${g.color}44`, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left', opacity: hasAccess ? 1 : 0.6 }}><div style={{ width: '48px', height: '48px', borderRadius: '12px', background: `linear-gradient(135deg,${g.color},${g.color}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', boxShadow: `0 6px 15px ${g.color}44` }}>{g.icon}</div><div style={{ flex: 1 }}><h3 style={{ color: '#fff', fontSize: '15px', fontWeight: '700', margin: '0 0 2px' }}>{g.name}</h3><p style={{ color: '#888', fontSize: '11px', margin: 0 }}>{g.desc}</p></div><div style={{ color: g.color, fontSize: '20px' }}>▶</div></button>))}</div></div>
       <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '16px', padding: '14px' }}><div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}><h2 style={{ color: '#fff', fontSize: '16px', fontWeight: '700', margin: 0 }}>🏆 Leaderboard</h2><span style={{ color: '#888', fontSize: '11px' }}>{totalPlayers} players</span></div>{leaderboard.length > 0 ? leaderboard.slice(0, 5).map((e, i) => (<div key={i} style={{ display: 'flex', alignItems: 'center', padding: '8px', borderRadius: '8px', marginBottom: '6px', background: e.isYou ? 'rgba(0,255,136,0.15)' : 'transparent', border: e.isYou ? '1px solid rgba(0,255,136,0.3)' : '1px solid transparent' }}><span style={{ fontSize: '18px', marginRight: '10px' }}>{e.rank === 1 ? '👑' : e.rank === 2 ? '🥈' : e.rank === 3 ? '🥉' : '🎮'}</span><span style={{ color: e.isYou ? '#0f8' : '#fff', flex: 1, fontSize: '13px', fontWeight: e.isYou ? '700' : '400' }}>{e.addr} {e.isYou && '(You)'}</span><span style={{ color: '#fd0', fontWeight: '700', fontSize: '13px' }}>{e.score.toLocaleString()}</span></div>)) : (<p style={{ color: '#888', fontSize: '13px', textAlign: 'center', margin: '20px 0' }}>No players yet. Be the first!</p>)}</div>
-      <p style={{ textAlign: 'center', color: '#666', fontSize: '10px', marginTop: '14px' }}>💚 Powered by Celo • Entry: 0.1 CELO</p>
+      <p style={{ textAlign: 'center', color: '#666', fontSize: '10px', marginTop: '14px' }}>💚 Powered by Celo • Entry: {entryFeeFormatted} USDm</p>
     </div>
   );
 
-  // MODAL
+  // DIFFICULTY MODAL
   const Modal = () => (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px' }}>
       <div style={{ background: 'linear-gradient(135deg,#1a1a3e,#0f0c29)', borderRadius: '20px', padding: '20px', maxWidth: '320px', width: '100%', border: '1px solid rgba(255,255,255,0.1)' }}>
@@ -377,6 +548,40 @@ export default function GameArcade() {
         <div style={{ marginBottom: '16px' }}><p style={{ color: '#fff', fontSize: '13px', fontWeight: '600', marginBottom: '10px', textAlign: 'center' }}>⚡ Select Difficulty</p><div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>{diffs.map((d) => (<button key={d.id} onClick={() => setDiff(d.id)} style={{ background: diff === d.id ? `linear-gradient(135deg,${d.color}33,${d.color}11)` : 'rgba(255,255,255,0.05)', border: diff === d.id ? `2px solid ${d.color}` : '2px solid transparent', borderRadius: '12px', padding: '12px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}><div style={{ width: '10px', height: '10px', borderRadius: '50%', background: d.color, boxShadow: diff === d.id ? `0 0 12px ${d.color}` : 'none' }} /><div style={{ textAlign: 'left' }}><p style={{ color: '#fff', fontSize: '14px', fontWeight: '700', margin: 0 }}>{d.name}</p><p style={{ color: '#888', fontSize: '10px', margin: '1px 0 0' }}>{d.desc}</p></div></div><div style={{ background: d.color, color: '#000', padding: '3px 8px', borderRadius: '16px', fontSize: '12px', fontWeight: '800' }}>{d.mult}</div></button>))}</div></div>
         <div style={{ background: 'rgba(255,215,0,0.1)', borderRadius: '10px', padding: '10px', marginBottom: '16px', border: '1px solid rgba(255,215,0,0.2)' }}><p style={{ color: '#fd0', fontSize: '11px', margin: 0, textAlign: 'center' }}>💡 1000 pts × {diff === 'easy' ? '1x' : diff === 'medium' ? '1.5x' : '2x'} = <strong>{diff === 'easy' ? '1,000' : diff === 'medium' ? '1,500' : '2,000'}</strong> final</p></div>
         <div style={{ display: 'flex', gap: '10px' }}><button onClick={() => setShowSelect(false)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: '#fff', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>Cancel</button><button onClick={() => { setShowSelect(false); setView('game'); }} style={{ flex: 2, padding: '12px', background: `linear-gradient(135deg,${game?.color},${game?.color}cc)`, border: 'none', borderRadius: '12px', color: '#000', fontSize: '14px', fontWeight: '800', cursor: 'pointer', boxShadow: `0 6px 20px ${game?.color}44` }}>🎮 START</button></div>
+      </div>
+    </div>
+  );
+
+  // WALLET MODAL
+  const WalletModal = () => (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', backdropFilter: 'blur(10px)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '14px' }}>
+      <div style={{ background: 'linear-gradient(135deg,#1a1a3e,#0f0c29)', borderRadius: '20px', padding: '24px', maxWidth: '320px', width: '100%', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '800', margin: '0 0 8px', textAlign: 'center' }}>🔗 Connect Wallet</h2>
+        <p style={{ color: '#888', fontSize: '12px', margin: '0 0 20px', textAlign: 'center' }}>Choose how to connect</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+          <button onClick={connectFarcaster} style={{ background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', border: 'none', borderRadius: '14px', padding: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🟣</div>
+            <div style={{ textAlign: 'left' }}>
+              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '700', margin: 0 }}>Farcaster Wallet</p>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', margin: '2px 0 0' }}>Connect via Warpcast</p>
+            </div>
+          </button>
+          <button onClick={connectInjected} style={{ background: 'linear-gradient(135deg, #F6851B, #E2761B)', border: 'none', borderRadius: '14px', padding: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🦊</div>
+            <div style={{ textAlign: 'left' }}>
+              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '700', margin: 0 }}>Browser Wallet</p>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', margin: '2px 0 0' }}>MetaMask, Rabby, etc.</p>
+            </div>
+          </button>
+          <button onClick={connectWalletConnect} style={{ background: 'linear-gradient(135deg, #3B99FC, #2D7DD2)', border: 'none', borderRadius: '14px', padding: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>🔵</div>
+            <div style={{ textAlign: 'left' }}>
+              <p style={{ color: '#fff', fontSize: '14px', fontWeight: '700', margin: 0 }}>WalletConnect</p>
+              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '11px', margin: '2px 0 0' }}>Mobile & desktop wallets</p>
+            </div>
+          </button>
+        </div>
+        <button onClick={() => setShowWalletModal(false)} style={{ width: '100%', marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: '#888', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
       </div>
     </div>
   );
@@ -413,5 +618,13 @@ export default function GameArcade() {
     );
   };
 
-  return (<>{view === 'home' && <Home />}{view === 'game' && <GameView />}{view === 'result' && <Result />}{showSelect && <Modal />}</>);
+  return (
+    <>
+      {view === 'home' && <Home />}
+      {view === 'game' && <GameView />}
+      {view === 'result' && <Result />}
+      {showSelect && <Modal />}
+      {showWalletModal && !hideConnectWalletButton && <WalletModal />}
+    </>
+  );
 }
