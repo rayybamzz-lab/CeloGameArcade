@@ -43,3 +43,17 @@ export function parseTokenUnits(value: string | number | bigint, decimals: numbe
 
   return BigInt(`${whole}${fraction.padEnd(decimals, '0')}`);
 }
+
+export function formatTokenUnits(value: bigint, decimals: number): string {
+  assertDecimals(decimals);
+
+  const zero = BigInt(0);
+  const negative = value < zero;
+  const absolute = negative ? -value : value;
+  const divisor = BigInt(`1${'0'.repeat(decimals)}`);
+  const whole = absolute / divisor;
+  const fraction = (absolute % divisor).toString().padStart(decimals, '0').replace(/0+$/, '');
+  const formatted = fraction ? `${whole.toString()}.${fraction}` : whole.toString();
+
+  return negative ? `-${formatted}` : formatted;
+}
