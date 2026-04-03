@@ -13,3 +13,9 @@ export const GameType = {
   SPACE_SHOOTER: 3,
   PUZZLE: 4,
 } as const;
+
+export const Difficulty = {
+  EASY: 0,
+  MEDIUM: 1,
+  HARD: 2,
+} as const;
