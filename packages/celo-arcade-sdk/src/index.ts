@@ -81,3 +81,34 @@ export function createArcadeConfig(overrides: Partial<ArcadeSdkConfig> = {}): Ar
     entryFee: overrides.entryFee ?? parseTokenUnits('0.01', stableTokenDecimals),
   };
 }
+
+export const CONTRACT_ABI = [
+  {
+    inputs: [
+      { internalType: 'address', name: 'usdmTokenAddress', type: 'address' },
+      { internalType: 'uint256', name: 'initialEntryFee', type: 'uint256' },
+    ],
+    stateMutability: 'nonpayable',
+    type: 'constructor',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'player', type: 'address' },
+      { indexed: false, name: 'deposited', type: 'uint256' },
+      { indexed: false, name: 'toPrizePool', type: 'uint256' },
+      { indexed: false, name: 'season', type: 'uint256' },
+    ],
+    name: 'AccessGranted',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'owner', type: 'address' },
+      { indexed: false, name: 'amount', type: 'uint256' },
+    ],
+    name: 'CreatorWithdraw',
+    type: 'event',
+  },
+] as const;
