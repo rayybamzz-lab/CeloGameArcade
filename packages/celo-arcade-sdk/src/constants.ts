@@ -7,6 +7,7 @@ export const DEFAULT_STABLE_TOKEN_SYMBOL = 'USDT';
 export const DEFAULT_STABLE_TOKEN_DECIMALS = 6;
 export const DEFAULT_MINIPAY_FEE_CURRENCY = '0x765DE816845861e75A25fCA122bb6898B8B1282a' as Address;
 export const CLAIM_COOLDOWN_SECONDS = 7 * 24 * 60 * 60;
+export const LEADERBOARD_SIZE = 10;
 
 export const GameType = {
   CAR_RACE: 0,

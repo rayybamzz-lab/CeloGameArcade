@@ -10,6 +10,7 @@ export {
   Difficulty,
   ENTRY_FEE,
   GameType,
+  LEADERBOARD_SIZE,
 } from './constants';
 export { createArcadeConfig } from './config';
 export { ContractEvent } from './events';
