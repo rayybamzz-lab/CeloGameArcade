@@ -158,4 +158,11 @@ export const CONTRACT_ABI = [
   { inputs: [], name: 'totalGamesPlayed', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
   { inputs: [], name: 'totalPlayers', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
   { inputs: [], name: 'usdmToken', outputs: [{ name: '', type: 'address' }], stateMutability: 'view', type: 'function' },
+  { inputs: [], name: 'claimPrizePool', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { inputs: [], name: 'depositToPlay', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { inputs: [{ name: 'newEntryFee', type: 'uint256' }], name: 'setEntryFee', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { inputs: [{ name: 'gameType', type: 'uint8' }, { name: 'rawScore', type: 'uint256' }, { name: 'difficulty', type: 'uint8' }], name: 'submitScore', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { inputs: [{ name: 'newOwner', type: 'address' }], name: 'transferOwnership', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { inputs: [], name: 'withdrawCreatorEarnings', outputs: [], stateMutability: 'nonpayable', type: 'function' },
+  { stateMutability: 'payable', type: 'receive' },
 ] as const;
