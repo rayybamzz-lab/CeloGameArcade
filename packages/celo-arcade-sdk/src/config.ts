@@ -28,3 +28,5 @@ export function createArcadeConfig(overrides: Partial<ArcadeSdkConfig> = {}): Ar
     entryFee: overrides.entryFee ?? parseTokenUnits('0.01', stableTokenDecimals),
   };
 }
+
+export const DEFAULT_ARCADE_CONFIG = createArcadeConfig();
