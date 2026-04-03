@@ -2,3 +2,4 @@ export type Address = `0x${string}`;
 
 export const DEFAULT_CONTRACT_ADDRESS = '0xD3Cb0357edF92E1056cfBC3dC5cC1DA52846DDB0' as Address;
 export const DEFAULT_STABLE_TOKEN_ADDRESS = '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e' as Address;
+export const DEFAULT_STABLE_TOKEN_SYMBOL = 'USDT';
