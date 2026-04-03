@@ -26,3 +26,12 @@ export const ReadMethod = {
   TOTAL_PLAYERS: 'totalPlayers',
   USDM_TOKEN: 'usdmToken',
 } as const;
+
+export const WriteMethod = {
+  CLAIM_PRIZE_POOL: 'claimPrizePool',
+  DEPOSIT_TO_PLAY: 'depositToPlay',
+  SET_ENTRY_FEE: 'setEntryFee',
+  SUBMIT_SCORE: 'submitScore',
+  TRANSFER_OWNERSHIP: 'transferOwnership',
+  WITHDRAW_CREATOR_EARNINGS: 'withdrawCreatorEarnings',
+} as const;
