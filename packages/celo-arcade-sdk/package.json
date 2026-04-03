@@ -1,0 +1,9 @@
+{
+  "name": "celo-arcade-sdk",
+  "version": "0.1.0",
+  "description": "Reusable SDK for integrating with the Celo Arcade contract.",
+  "license": "MIT",
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  }
+}
