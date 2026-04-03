@@ -1,6 +1,7 @@
 export type { Address, ArcadeSdkConfig } from './types';
 export type { ContractAbi } from './abi';
 export {
+  BASIS_POINTS,
   DEFAULT_CONTRACT_ADDRESS,
   CLAIM_COOLDOWN_SECONDS,
   CREATOR_SHARE_BPS,
