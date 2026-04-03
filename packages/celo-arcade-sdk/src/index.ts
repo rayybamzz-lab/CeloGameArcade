@@ -111,4 +111,31 @@ export const CONTRACT_ABI = [
     name: 'CreatorWithdraw',
     type: 'event',
   },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: false, name: 'oldFee', type: 'uint256' },
+      { indexed: false, name: 'newFee', type: 'uint256' },
+      { indexed: true, name: 'updatedBy', type: 'address' },
+      { indexed: false, name: 'timestamp', type: 'uint256' },
+    ],
+    name: 'EntryFeeUpdated',
+    type: 'event',
+  },
+  {
+    anonymous: false,
+    inputs: [
+      { indexed: true, name: 'player', type: 'address' },
+      { indexed: false, name: 'rank', type: 'uint256' },
+      { indexed: false, name: 'totalScore', type: 'uint256' },
+    ],
+    name: 'LeaderboardUpdated',
+    type: 'event',
+  },
+  { inputs: [], name: 'CLAIM_COOLDOWN', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  { inputs: [], name: 'ENTRY_FEE', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  { inputs: [], name: 'MAX_DIFFICULTY', outputs: [{ name: '', type: 'uint8' }], stateMutability: 'view', type: 'function' },
+  { inputs: [], name: 'MAX_ENTRY_FEE', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
+  { inputs: [], name: 'MAX_GAME_TYPE', outputs: [{ name: '', type: 'uint8' }], stateMutability: 'view', type: 'function' },
+  { inputs: [], name: 'MIN_ENTRY_FEE', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
 ] as const;
