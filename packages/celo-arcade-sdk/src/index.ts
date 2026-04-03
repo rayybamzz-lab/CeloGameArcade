@@ -25,3 +25,21 @@ function assertDecimals(decimals: number) {
     throw new Error(`Invalid token decimals: ${decimals}`);
   }
 }
+
+export function parseTokenUnits(value: string | number | bigint, decimals: number): bigint {
+  assertDecimals(decimals);
+
+  if (typeof value === 'bigint') return value;
+
+  const normalized = String(value).trim();
+  if (!/^\d+(\.\d+)?$/.test(normalized)) {
+    throw new Error(`Invalid token amount: ${normalized}`);
+  }
+
+  const [whole, fraction = ''] = normalized.split('.');
+  if (fraction.length > decimals) {
+    throw new Error(`Too many decimal places for ${decimals}-decimals token amount: ${normalized}`);
+  }
+
+  return BigInt(`${whole}${fraction.padEnd(decimals, '0')}`);
+}
