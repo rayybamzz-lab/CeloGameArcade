@@ -1,4 +1,6 @@
-export type Address = `0x${string}`;
+import type { Address, ArcadeSdkConfig } from './types';
+
+export type { Address, ArcadeSdkConfig } from './types';
 
 export const DEFAULT_CONTRACT_ADDRESS = '0xD3Cb0357edF92E1056cfBC3dC5cC1DA52846DDB0' as Address;
 export const DEFAULT_STABLE_TOKEN_ADDRESS = '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e' as Address;
@@ -59,15 +61,6 @@ export function formatTokenUnits(value: bigint, decimals: number): string {
 }
 
 export const ENTRY_FEE = parseTokenUnits('0.01', DEFAULT_STABLE_TOKEN_DECIMALS);
-
-export interface ArcadeSdkConfig {
-  contractAddress: Address;
-  stableTokenAddress: Address;
-  stableTokenSymbol: string;
-  stableTokenDecimals: number;
-  miniPayFeeCurrency: Address;
-  entryFee: bigint;
-}
 
 export function createArcadeConfig(overrides: Partial<ArcadeSdkConfig> = {}): ArcadeSdkConfig {
   const stableTokenDecimals = overrides.stableTokenDecimals ?? DEFAULT_STABLE_TOKEN_DECIMALS;
