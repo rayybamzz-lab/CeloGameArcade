@@ -1,3 +1,33 @@
 # Celo Arcade SDK
 
 Standalone SDK for integrating with the Celo Arcade contract and app defaults.
+
+## Install
+
+```bash
+npm install celo-arcade-sdk
+```
+
+## Use
+
+```ts
+import {
+  CONTRACT_ABI,
+  DEFAULT_ARCADE_CONFIG,
+  DEFAULT_STABLE_TOKEN,
+  ENTRY_FEE,
+  formatTokenUnits,
+} from 'celo-arcade-sdk';
+
+console.log(DEFAULT_ARCADE_CONFIG.contractAddress);
+console.log(DEFAULT_STABLE_TOKEN.symbol);
+console.log(formatTokenUnits(ENTRY_FEE, DEFAULT_STABLE_TOKEN.decimals));
+console.log(CONTRACT_ABI.length);
+```
+
+## Build Locally
+
+```bash
+npm install
+npm run build
+```
