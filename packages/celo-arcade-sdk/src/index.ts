@@ -59,3 +59,12 @@ export function formatTokenUnits(value: bigint, decimals: number): string {
 }
 
 export const ENTRY_FEE = parseTokenUnits('0.01', DEFAULT_STABLE_TOKEN_DECIMALS);
+
+export interface ArcadeSdkConfig {
+  contractAddress: Address;
+  stableTokenAddress: Address;
+  stableTokenSymbol: string;
+  stableTokenDecimals: number;
+  miniPayFeeCurrency: Address;
+  entryFee: bigint;
+}
