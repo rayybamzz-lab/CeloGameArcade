@@ -2,6 +2,7 @@ export type { Address, ArcadeSdkConfig } from './types';
 export type { ContractAbi } from './abi';
 export {
   DEFAULT_CONTRACT_ADDRESS,
+  CLAIM_COOLDOWN_SECONDS,
   DEFAULT_MINIPAY_FEE_CURRENCY,
   DEFAULT_STABLE_TOKEN_ADDRESS,
   DEFAULT_STABLE_TOKEN_DECIMALS,
