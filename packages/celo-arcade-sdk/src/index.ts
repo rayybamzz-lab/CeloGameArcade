@@ -57,3 +57,5 @@ export function formatTokenUnits(value: bigint, decimals: number): string {
 
   return negative ? `-${formatted}` : formatted;
 }
+
+export const ENTRY_FEE = parseTokenUnits('0.01', DEFAULT_STABLE_TOKEN_DECIMALS);
