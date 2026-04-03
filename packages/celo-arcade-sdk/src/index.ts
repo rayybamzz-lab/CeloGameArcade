@@ -1,6 +1,8 @@
 import type { Address, ArcadeSdkConfig } from './types';
+import { formatTokenUnits, parseTokenUnits } from './units';
 
 export type { Address, ArcadeSdkConfig } from './types';
+export { assertDecimals, formatTokenUnits, parseTokenUnits } from './units';
 
 export const DEFAULT_CONTRACT_ADDRESS = '0xD3Cb0357edF92E1056cfBC3dC5cC1DA52846DDB0' as Address;
 export const DEFAULT_STABLE_TOKEN_ADDRESS = '0x48065fbBE25f71C9282ddf5e1cD6D6A887483D5e' as Address;
@@ -21,44 +23,6 @@ export const Difficulty = {
   MEDIUM: 1,
   HARD: 2,
 } as const;
-
-function assertDecimals(decimals: number) {
-  if (!Number.isInteger(decimals) || decimals < 0 || decimals > 18) {
-    throw new Error(`Invalid token decimals: ${decimals}`);
-  }
-}
-
-export function parseTokenUnits(value: string | number | bigint, decimals: number): bigint {
-  assertDecimals(decimals);
-
-  if (typeof value === 'bigint') return value;
-
-  const normalized = String(value).trim();
-  if (!/^\d+(\.\d+)?$/.test(normalized)) {
-    throw new Error(`Invalid token amount: ${normalized}`);
-  }
-
-  const [whole, fraction = ''] = normalized.split('.');
-  if (fraction.length > decimals) {
-    throw new Error(`Too many decimal places for ${decimals}-decimals token amount: ${normalized}`);
-  }
-
-  return BigInt(`${whole}${fraction.padEnd(decimals, '0')}`);
-}
-
-export function formatTokenUnits(value: bigint, decimals: number): string {
-  assertDecimals(decimals);
-
-  const zero = BigInt(0);
-  const negative = value < zero;
-  const absolute = negative ? -value : value;
-  const divisor = BigInt(`1${'0'.repeat(decimals)}`);
-  const whole = absolute / divisor;
-  const fraction = (absolute % divisor).toString().padStart(decimals, '0').replace(/0+$/, '');
-  const formatted = fraction ? `${whole.toString()}.${fraction}` : whole.toString();
-
-  return negative ? `-${formatted}` : formatted;
-}
 
 export const ENTRY_FEE = parseTokenUnits('0.01', DEFAULT_STABLE_TOKEN_DECIMALS);
 
