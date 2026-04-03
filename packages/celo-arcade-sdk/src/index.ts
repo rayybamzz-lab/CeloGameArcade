@@ -1,4 +1,5 @@
 export type { Address, ArcadeSdkConfig } from './types';
+export type { ContractAbi } from './abi';
 export {
   DEFAULT_CONTRACT_ADDRESS,
   DEFAULT_MINIPAY_FEE_CURRENCY,

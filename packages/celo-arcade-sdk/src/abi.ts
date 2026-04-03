@@ -82,3 +82,5 @@ export const CONTRACT_ABI = [
   { inputs: [], name: 'withdrawCreatorEarnings', outputs: [], stateMutability: 'nonpayable', type: 'function' },
   { stateMutability: 'payable', type: 'receive' },
 ] as const;
+
+export type ContractAbi = typeof CONTRACT_ABI;
