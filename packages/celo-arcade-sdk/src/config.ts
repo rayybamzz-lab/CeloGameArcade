@@ -1,4 +1,5 @@
 import type { ArcadeSdkConfig } from './types';
+import { assertAddress } from './addresses';
 import {
   DEFAULT_CONTRACT_ADDRESS,
   DEFAULT_MINIPAY_FEE_CURRENCY,
@@ -10,13 +11,20 @@ import { parseTokenUnits } from './units';
 
 export function createArcadeConfig(overrides: Partial<ArcadeSdkConfig> = {}): ArcadeSdkConfig {
   const stableTokenDecimals = overrides.stableTokenDecimals ?? DEFAULT_STABLE_TOKEN_DECIMALS;
+  const contractAddress = overrides.contractAddress ?? DEFAULT_CONTRACT_ADDRESS;
+  const stableTokenAddress = overrides.stableTokenAddress ?? DEFAULT_STABLE_TOKEN_ADDRESS;
+  const miniPayFeeCurrency = overrides.miniPayFeeCurrency ?? DEFAULT_MINIPAY_FEE_CURRENCY;
+
+  assertAddress(contractAddress, 'contract address');
+  assertAddress(stableTokenAddress, 'stable token address');
+  assertAddress(miniPayFeeCurrency, 'MiniPay fee currency');
 
   return {
-    contractAddress: overrides.contractAddress ?? DEFAULT_CONTRACT_ADDRESS,
-    stableTokenAddress: overrides.stableTokenAddress ?? DEFAULT_STABLE_TOKEN_ADDRESS,
+    contractAddress,
+    stableTokenAddress,
     stableTokenSymbol: overrides.stableTokenSymbol ?? DEFAULT_STABLE_TOKEN_SYMBOL,
     stableTokenDecimals,
-    miniPayFeeCurrency: overrides.miniPayFeeCurrency ?? DEFAULT_MINIPAY_FEE_CURRENCY,
+    miniPayFeeCurrency,
     entryFee: overrides.entryFee ?? parseTokenUnits('0.01', stableTokenDecimals),
   };
 }
