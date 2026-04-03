@@ -13,6 +13,7 @@ export {
   ENTRY_FEE,
   GameType,
   LEADERBOARD_SIZE,
+  PRIZE_SHARE_BPS,
 } from './constants';
 export { createArcadeConfig } from './config';
 export { ContractEvent } from './events';
