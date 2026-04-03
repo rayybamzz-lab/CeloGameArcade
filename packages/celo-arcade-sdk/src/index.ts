@@ -11,5 +11,6 @@ export {
   GameType,
 } from './constants';
 export { createArcadeConfig } from './config';
+export { ReadMethod } from './methods';
 export { assertDecimals, formatTokenUnits, parseTokenUnits } from './units';
 export { CONTRACT_ABI } from './abi';
