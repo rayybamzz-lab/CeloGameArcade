@@ -1,4 +1,4 @@
-export type { Address, ArcadeSdkConfig } from './types';
+export type { Address, ArcadeSdkConfig, StableTokenMetadata } from './types';
 export type { ContractAbi } from './abi';
 export {
   BASIS_POINTS,
