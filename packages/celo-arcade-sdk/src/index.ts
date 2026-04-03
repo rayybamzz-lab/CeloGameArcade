@@ -19,3 +19,9 @@ export const Difficulty = {
   MEDIUM: 1,
   HARD: 2,
 } as const;
+
+function assertDecimals(decimals: number) {
+  if (!Number.isInteger(decimals) || decimals < 0 || decimals > 18) {
+    throw new Error(`Invalid token decimals: ${decimals}`);
+  }
+}
