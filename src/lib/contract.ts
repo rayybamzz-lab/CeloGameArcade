@@ -25,7 +25,7 @@ export const STABLE_TOKEN_DECIMALS =
     ? parsedTokenDecimals
     : DEFAULT_STABLE_TOKEN_DECIMALS;
 export const MINIPAY_FEE_CURRENCY = (
-  process.env.NEXT_PUBLIC_MINIPAY_FEE_CURRENCY || DEFAULT_MINIPAY_FEE_CURRENCY
+  process.env.NEXT_PUBLIC_MINIPAY_FEE_CURRENCY?.trim() || DEFAULT_MINIPAY_FEE_CURRENCY
 ) as `0x${string}`;
 
 // Backward-compatible export name used across the app.
