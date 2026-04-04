@@ -17,7 +17,7 @@ const parsedTokenDecimals = Number.parseInt(
 );
 
 export const STABLE_TOKEN_ADDRESS = (
-  process.env.NEXT_PUBLIC_STABLE_TOKEN_ADDRESS || DEFAULT_STABLE_TOKEN_ADDRESS
+  process.env.NEXT_PUBLIC_STABLE_TOKEN_ADDRESS?.trim() || DEFAULT_STABLE_TOKEN_ADDRESS
 ) as `0x${string}`;
 export const STABLE_TOKEN_SYMBOL = process.env.NEXT_PUBLIC_STABLE_TOKEN_SYMBOL || DEFAULT_STABLE_TOKEN_SYMBOL;
 export const STABLE_TOKEN_DECIMALS =
