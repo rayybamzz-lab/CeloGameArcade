@@ -81,7 +81,7 @@ function NetworkGuard({ children }: { children: ReactNode }) {
           <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '0 0 10px' }}>Wrong Network</h2>
           <p style={{ color: '#888', fontSize: '14px', margin: '0 0 8px' }}>Current: <strong style={{ color: '#fff' }}>{currentChainName}</strong></p>
           <p style={{ color: '#888', fontSize: '14px', margin: '0 0 20px' }}>Switch to <strong style={{ color: '#00ff88' }}>Celo Mainnet</strong> to continue.</p>
-          <button onClick={handleSwitchNetwork} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00ff88, #00aa55)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>🔄 Switch to Celo Mainnet</button>
+          <button type="button" onClick={handleSwitchNetwork} style={{ width: '100%', padding: '14px', background: 'linear-gradient(135deg, #00ff88, #00aa55)', border: 'none', borderRadius: '12px', color: '#000', fontSize: '16px', fontWeight: '700', cursor: 'pointer' }}>🔄 Switch to Celo Mainnet</button>
         </div>
       </div>
     );
