@@ -76,7 +76,7 @@ function NetworkGuard({ children }: { children: ReactNode }) {
   if (isConnected && wrongNetwork) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '30px', maxWidth: '360px', width: '100%', textAlign: 'center', border: '1px solid rgba(255,215,0,0.3)' }}>
+        <div role="alert" style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '20px', padding: '30px', maxWidth: '360px', width: '100%', textAlign: 'center', border: '1px solid rgba(255,215,0,0.3)' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚠️</div>
           <h2 style={{ color: '#fff', fontSize: '20px', fontWeight: '700', margin: '0 0 10px' }}>Wrong Network</h2>
           <p style={{ color: '#888', fontSize: '14px', margin: '0 0 8px' }}>Current: <strong style={{ color: '#fff' }}>{currentChainName}</strong></p>
