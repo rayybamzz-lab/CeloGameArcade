@@ -26,9 +26,9 @@ A blockchain-powered gaming arcade built as a Farcaster mini app on the Celo net
 
 ## 📋 Contract
 
-- **Address:** `0x5c70CB9F68a5bcB9284ccb237036b82A2C99D07F`
+- **Address:** `0xD3Cb0357edF92E1056cfBC3dC5cC1DA52846DDB0`
 - **Network:** Celo Mainnet (Chain ID: 42220)
-- **Entry Fee:** 0.1 CELO
+- **Entry Fee:** Read from the contract at runtime
 
 ## 🚀 Quick Start
 ```bash
