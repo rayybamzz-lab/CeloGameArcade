@@ -11,7 +11,7 @@ A blockchain-powered gaming arcade built as a Farcaster mini app on the Celo net
 
 ## ⚡ Features
 
-- 💰 **Prize Pool** - 80% of deposits go to prize pool, #1 player wins all
+- 💰 **Prize Pool** - 80% of each entry goes to the prize pool, and the #1 player can claim it all
 - 🏆 **Leaderboard** - Top 10 players ranked by score
 - 🎯 **Difficulty Multipliers** - Easy (1x), Medium (1.5x), Hard (2x)
 - 🔗 **On-chain Scores** - All scores recorded on Celo blockchain
