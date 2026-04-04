@@ -98,7 +98,6 @@ export function Providers({ children }: { children: ReactNode }) {
       try {
         const { sdk } = await import('@farcaster/miniapp-sdk');
         await sdk.actions.ready();
-        console.log('Farcaster SDK ready');
       } catch (e) {
         console.log('Not in Farcaster context:', e);
       }
