@@ -47,10 +47,3 @@ npx vercel --prod
 ## 📄 License
 
 MIT
-```
-
----
-
-**Topics/Tags for the repo:**
-```
-celo blockchain farcaster mini-app web3 nextjs gaming arcade wagmi typescript solidity
