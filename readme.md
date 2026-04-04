@@ -1,6 +1,6 @@
 # 🎮 Celo Game Arcade
 
-A blockchain-powered gaming arcade built as a Farcaster mini app on the Celo network. Deposit 0.1 CELO to unlock all games, compete for the top spot on the leaderboard, and claim the entire prize pool!
+A blockchain-powered gaming arcade built as a Farcaster mini app on the Celo network. Deposit the current stablecoin entry fee to unlock all games, compete for the top spot on the leaderboard, and claim the entire prize pool!
 
 ## 🕹️ Games
 
