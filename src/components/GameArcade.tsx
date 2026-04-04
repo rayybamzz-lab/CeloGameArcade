@@ -631,7 +631,7 @@ export default function GameArcade() {
             </div>
           </button>
         </div>
-        <button onClick={() => setShowWalletModal(false)} style={{ width: '100%', marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: '#888', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
+        <button type="button" onClick={() => setShowWalletModal(false)} style={{ width: '100%', marginTop: '16px', padding: '12px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '12px', color: '#888', fontSize: '14px', cursor: 'pointer' }}>Cancel</button>
       </div>
     </div>
   );
