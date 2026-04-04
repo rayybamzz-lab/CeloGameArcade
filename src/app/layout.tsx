@@ -4,6 +4,13 @@ import "./globals.css";
 
 const DEFAULT_APP_URL = "https://celogamearcade.vercel.app";
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL?.trim() || DEFAULT_APP_URL;
+const METADATA_BASE = (() => {
+  try {
+    return new URL(APP_URL);
+  } catch {
+    return new URL(DEFAULT_APP_URL);
+  }
+})();
 
 const frame = {
   version: "1",
@@ -23,7 +30,7 @@ const frame = {
 export const metadata: Metadata = {
   title: "Celo Game Arcade",
   description: "Play classic arcade games and compete for stablecoin prizes on Celo mainnet.",
-  metadataBase: new URL(APP_URL),
+  metadataBase: METADATA_BASE,
   alternates: {
     canonical: APP_URL,
   },
