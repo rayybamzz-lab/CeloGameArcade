@@ -23,6 +23,9 @@ export const metadata: Metadata = {
   title: "Celo Game Arcade",
   description: "Play classic arcade games and compete for stablecoin prizes on Celo mainnet.",
   metadataBase: new URL(APP_URL),
+  alternates: {
+    canonical: APP_URL,
+  },
   icons: {
     icon: "/brand-mark.svg",
     shortcut: "/favicon.ico",
