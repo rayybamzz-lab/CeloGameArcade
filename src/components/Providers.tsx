@@ -110,7 +110,7 @@ export function Providers({ children }: { children: ReactNode }) {
   if (!isReady) {
     return (
       <div style={{ minHeight: '100vh', background: 'linear-gradient(135deg, #0f0c29, #302b63, #24243e)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
+        <div role="status" style={{ textAlign: 'center' }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>🎮</div>
           <p style={{ color: '#00ff88', fontSize: '18px' }}>Loading Celo Arcade...</p>
         </div>
