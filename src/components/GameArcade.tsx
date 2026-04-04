@@ -529,7 +529,7 @@ export default function GameArcade() {
             )}
           </div>
         ) : hideConnectWalletButton ? (
-          <div style={{ background: 'rgba(0,255,136,0.15)', border: '1px solid rgba(0,255,136,0.4)', borderRadius: '16px', padding: '8px 12px', color: '#0f8', fontSize: '11px', fontWeight: '700' }}>
+          <div role="status" style={{ background: 'rgba(0,255,136,0.15)', border: '1px solid rgba(0,255,136,0.4)', borderRadius: '16px', padding: '8px 12px', color: '#0f8', fontSize: '11px', fontWeight: '700' }}>
             MiniPay wallet detected
           </div>
         ) : (
