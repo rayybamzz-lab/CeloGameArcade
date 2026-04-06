@@ -36,6 +36,10 @@ git clone https://github.com/AdekunleBamz/CeloGameArcade.git
 cd CeloGameArcade
 npm install
 npm run dev
+
+# Code Quality
+npm run lint:fix
+npm run format
 ```
 
 ## 📦 Deploy
