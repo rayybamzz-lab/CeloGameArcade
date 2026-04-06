@@ -16,9 +16,25 @@ contract CeloArcadeStableV4 {
     uint8 public constant MAX_DIFFICULTY = 2;
     uint256 public constant CLAIM_COOLDOWN = 7 days;
 
+    uint256 private constant BPS_DENOMINATOR = 10000;
     uint256 private constant MAX_LEADERBOARD_SIZE = 10;
     uint256 private constant CREATOR_BPS = 2000; // 20%
-    uint256 private constant BPS_DENOMINATOR = 10000;
+
+    error OnlyOwner();
+    error ReentrancyGuard();
+    error InvalidToken();
+    error UnsupportedDecimals();
+    error EntryFeeTooLow();
+    error EntryFeeTooHigh();
+    error InvalidGameType();
+    error InvalidDifficulty();
+    error AccessNotGranted();
+    error PrizeNotClaimable();
+    error NotTopPlayer();
+    error PrizePoolEmpty();
+    error NoEarnings();
+    error InvalidOwner();
+
 
     struct Player {
         bool hasAccess;
@@ -80,22 +96,22 @@ contract CeloArcadeStableV4 {
     event PrizePoolClaimed(address indexed winner, uint256 amount, uint256 season);
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Only owner");
+        if (msg.sender != owner) revert OnlyOwner();
         _;
     }
 
     modifier nonReentrant() {
-        require(!_entered, "Reentrancy guard");
+        if (_entered) revert ReentrancyGuard();
         _entered = true;
         _;
         _entered = false;
     }
 
     constructor(address stableTokenAddress, uint256 initialEntryFee) {
-        require(stableTokenAddress != address(0), "Invalid token");
+        if (stableTokenAddress == address(0)) revert InvalidToken();
 
         uint8 decimals = IERC20Metadata(stableTokenAddress).decimals();
-        require(decimals >= 2 && decimals <= 18, "Unsupported decimals");
+        if (decimals < 2 || decimals > 18) revert UnsupportedDecimals();
 
         owner = msg.sender;
         usdmToken = IERC20(stableTokenAddress);
@@ -151,11 +167,11 @@ contract CeloArcadeStableV4 {
     }
 
     function submitScore(uint8 gameType, uint256 rawScore, uint8 difficulty) external {
-        require(gameType <= MAX_GAME_TYPE, "Invalid game type");
-        require(difficulty <= MAX_DIFFICULTY, "Invalid difficulty");
+        if (gameType > MAX_GAME_TYPE) revert InvalidGameType();
+        if (difficulty > MAX_DIFFICULTY) revert InvalidDifficulty();
 
         Player storage player = players[msg.sender];
-        require(player.hasAccess, "Access not granted");
+        if (!player.hasAccess) revert AccessNotGranted();
 
         if (player.seasonJoined != seasonNumber) {
             _resetPlayerForSeason(msg.sender, player);
@@ -179,11 +195,11 @@ contract CeloArcadeStableV4 {
     }
 
     function claimPrizePool() external nonReentrant {
-        require(canClaimPrize(), "Prize not claimable");
-        require(leaderboard[0].player == msg.sender, "Only top player can claim");
+        if (!canClaimPrize()) revert PrizeNotClaimable();
+        if (leaderboard[0].player != msg.sender) revert NotTopPlayer();
 
         uint256 claimAmount = prizePool;
-        require(claimAmount > 0, "Prize pool empty");
+        if (claimAmount == 0) revert PrizePoolEmpty();
 
         prizePool = 0;
         lastClaimTime = block.timestamp;
@@ -200,7 +216,7 @@ contract CeloArcadeStableV4 {
 
     function withdrawCreatorEarnings() external onlyOwner nonReentrant {
         uint256 amount = creatorEarnings;
-        require(amount > 0, "No earnings");
+        if (amount == 0) revert NoEarnings();
 
         creatorEarnings = 0;
         _safeTransfer(address(usdmToken), owner, amount);
@@ -208,7 +224,7 @@ contract CeloArcadeStableV4 {
     }
 
     function transferOwnership(address newOwner) external onlyOwner {
-        require(newOwner != address(0), "Invalid owner");
+        if (newOwner == address(0)) revert InvalidOwner();
         owner = newOwner;
     }
 
@@ -304,8 +320,8 @@ contract CeloArcadeStableV4 {
     }
 
     function _setEntryFee(uint256 newEntryFee) internal {
-        require(newEntryFee >= _minEntryFee, "Entry fee too low");
-        require(newEntryFee <= _maxEntryFee, "Entry fee too high");
+        if (newEntryFee < _minEntryFee) revert EntryFeeTooLow();
+        if (newEntryFee > _maxEntryFee) revert EntryFeeTooHigh();
 
         uint256 oldFee = entryFee;
         entryFee = newEntryFee;
