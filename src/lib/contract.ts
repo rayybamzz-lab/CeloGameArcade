@@ -62,4 +62,57 @@ export const Difficulty = {
   HARD: 2,
 } as const;
 
+export interface GameInfo {
+  id: string;
+  name: string;
+  icon: string;
+  color: string;
+  desc: string;
+  gameType: number;
+}
+
+export interface DifficultyInfo {
+  id: string;
+  name: string;
+  mult: string;
+  color: string;
+  desc: string;
+  value: number;
+}
+
+/**
+ * Metadata for all available games in the arcade.
+ */
+export const GAMES_METADATA: GameInfo[] = [
+  { id: 'car', name: 'Turbo Racing', icon: '🏎️', color: '#00ff88', desc: 'Dodge & collect!', gameType: GameType.CAR_RACE },
+  { id: 'snake', name: 'Neon Snake', icon: '🐍', color: '#ff6b6b', desc: 'Classic snake!', gameType: GameType.SNAKE },
+  { id: 'flappy', name: 'Flappy Celo', icon: '🐦', color: '#ffd700', desc: 'Fly through pipes!', gameType: GameType.FLAPPY },
+  { id: 'space', name: 'Space Blaster', icon: '🚀', color: '#9933ff', desc: 'Destroy aliens!', gameType: GameType.SPACE_SHOOTER },
+];
+
+/**
+ * Metadata for game difficulty levels.
+ */
+export const DIFFICULTY_METADATA: DifficultyInfo[] = [
+  { id: 'easy', name: 'Easy', mult: '1x', color: '#00ff88', desc: 'Slower pace', value: Difficulty.EASY },
+  { id: 'medium', name: 'Medium', mult: '1.5x', color: '#ffd700', desc: 'Balanced', value: Difficulty.MEDIUM },
+  { id: 'hard', name: 'Hard', mult: '2x', color: '#ff4444', desc: 'Max rewards!', value: Difficulty.HARD },
+];
+
+/**
+ * Common MiniPay and network URLs.
+ */
+export const MINIPAY_URLS = {
+  ADD_CASH: 'https://minipay.google/add-cash',
+  MENTO_SWAP: 'https://app.mento.org',
+} as const;
+
+/**
+ * Application branding and metadata for wallet connectors.
+ */
+export const APP_METADATA = {
+  name: 'Celo Game Arcade',
+  description: 'Play games and win USDm!',
+  icons: ['https://celo.org/favicon.ico'],
+} as const;
 export const CONTRACT_ABI = CONTRACT_ABI_JSON as any;

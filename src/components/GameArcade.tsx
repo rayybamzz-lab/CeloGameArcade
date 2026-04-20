@@ -4,7 +4,7 @@ import { useAccount, useConnect, useDisconnect, useReadContract, useWriteContrac
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { injected, walletConnect } from 'wagmi/connectors';
 import { formatEther, formatUnits } from 'viem';
-import { CONTRACT_ADDRESS, CONTRACT_ABI, GameType, Difficulty, ENTRY_FEE, USDM_TOKEN_ADDRESS, STABLE_TOKEN_DECIMALS, STABLE_TOKEN_SYMBOL, MINIPAY_FEE_CURRENCY } from '@/lib/contract';
+import { CONTRACT_ADDRESS, CONTRACT_ABI, GameType, Difficulty, ENTRY_FEE, USDM_TOKEN_ADDRESS, STABLE_TOKEN_DECIMALS, STABLE_TOKEN_SYMBOL, MINIPAY_FEE_CURRENCY, GAMES_METADATA, DIFFICULTY_METADATA, MINIPAY_URLS, type GameInfo, type DifficultyInfo } from '@/lib/contract';
 import { useMiniPay } from '@/hooks/useMiniPay';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '';
@@ -12,14 +12,8 @@ const MINI_PAY_ADD_CASH_URL = 'https://minipay.opera.com/add_cash';
 const MENTO_SWAP_URL = 'https://app.mento.org';
 const MINIPAY_GAS_TOKEN_SYMBOL = 'USDm';
 
+import ERC20_ABI_JSON from '../abi/ERC20.json';
 interface LeaderboardEntry { player: string; totalScore: bigint; }
-interface GameInfo { id: string; name: string; icon: string; color: string; desc: string; gameType: number; }
-interface DifficultyInfo { id: string; name: string; mult: string; color: string; desc: string; value: number; }
-const ERC20_ABI = [
-  { inputs: [{ name: 'account', type: 'address' }], name: 'balanceOf', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
-  { inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], name: 'allowance', outputs: [{ name: '', type: 'uint256' }], stateMutability: 'view', type: 'function' },
-  { inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], name: 'approve', outputs: [{ name: '', type: 'bool' }], stateMutability: 'nonpayable', type: 'function' },
-] as const;
 const MAX_USDM_APPROVAL = BigInt('0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff');
 
 export default function GameArcade() {
@@ -65,18 +59,8 @@ export default function GameArcade() {
   const leaderboard = leaderboardData ? ([...leaderboardData] as LeaderboardEntry[]).filter((e) => e.player !== '0x0000000000000000000000000000000000000000').map((e, i) => ({ rank: i + 1, addr: `${e.player.slice(0, 6)}...${e.player.slice(-4)}`, fullAddr: e.player, score: Number(e.totalScore), isYou: e.player.toLowerCase() === address?.toLowerCase() })) : [];
   const userRank = leaderboard.findIndex((e) => e.isYou) + 1 || '-';
 
-  const diffs: DifficultyInfo[] = [
-    { id: 'easy', name: 'Easy', mult: '1x', color: '#00ff88', desc: 'Slower pace', value: Difficulty.EASY },
-    { id: 'medium', name: 'Medium', mult: '1.5x', color: '#ffd700', desc: 'Balanced', value: Difficulty.MEDIUM },
-    { id: 'hard', name: 'Hard', mult: '2x', color: '#ff4444', desc: 'Max rewards!', value: Difficulty.HARD },
-  ];
-
-  const games: GameInfo[] = [
-    { id: 'car', name: 'Turbo Racing', icon: '🏎️', color: '#00ff88', desc: 'Dodge & collect!', gameType: GameType.CAR_RACE },
-    { id: 'snake', name: 'Neon Snake', icon: '🐍', color: '#ff6b6b', desc: 'Classic snake!', gameType: GameType.SNAKE },
-    { id: 'flappy', name: 'Flappy Celo', icon: '🐦', color: '#ffd700', desc: 'Fly through pipes!', gameType: GameType.FLAPPY },
-    { id: 'space', name: 'Space Blaster', icon: '🚀', color: '#9933ff', desc: 'Destroy aliens!', gameType: GameType.SPACE_SHOOTER },
-  ];
+  const diffs = DIFFICULTY_METADATA;
+  const games = GAMES_METADATA;
 
   // Check if inside Farcaster on mount
   useEffect(() => {
@@ -111,8 +95,8 @@ export default function GameArcade() {
   // Connect with WalletConnect
   const connectWalletConnect = () => {
     console.log('Connecting with WalletConnect...');
-    connect({ 
-      connector: walletConnect({ 
+    connect({
+      connector: walletConnect({
         projectId,
         metadata: {
           name: 'Celo Game Arcade',
@@ -120,7 +104,7 @@ export default function GameArcade() {
           url: typeof window !== 'undefined' ? window.location.origin : '',
           icons: ['https://celo.org/favicon.ico'],
         },
-      }) 
+      })
     });
     setShowWalletModal(false);
   };
@@ -146,15 +130,15 @@ export default function GameArcade() {
     }
   };
 
-  const writeContractWithMiniPayFee = (config: Record<string, unknown>) => {
+  const writeContractWithMiniPayFee = (config: Record<string, any>) => {
     const request = isMiniPay ? { ...config, feeCurrency: MINIPAY_FEE_CURRENCY } : config;
-    writeContract(request as any);
+    writeContract(request);
   };
 
   const handleApproveUsdm = () => {
     writeContractWithMiniPayFee({
       address: USDM_TOKEN_ADDRESS,
-      abi: ERC20_ABI,
+      abi: ERC20_ABI_JSON,
       functionName: 'approve',
       args: [CONTRACT_ADDRESS, MAX_USDM_APPROVAL],
     });
