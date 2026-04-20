@@ -112,17 +112,24 @@ contract CeloArcadeStableV4 {
         _setEntryFee(initialEntryFee);
     }
 
-    // Backward compatibility with older frontend ABIs.
+    /**
+     * @notice Returns the current entry fee.
+     * @dev Kept for backward compatibility with older frontend ABIs.
+     */
     function ENTRY_FEE() external view returns (uint256) {
         return entryFee;
     }
 
-    // Exposes dynamic min fee with the same ABI name as prior versions.
+    /**
+     * @notice Returns the minimum allowed entry fee.
+     */
     function MIN_ENTRY_FEE() external view returns (uint256) {
         return _minEntryFee;
     }
 
-    // Exposes dynamic max fee with the same ABI name as prior versions.
+    /**
+     * @notice Returns the maximum allowed entry fee.
+     */
     function MAX_ENTRY_FEE() external view returns (uint256) {
         return _maxEntryFee;
     }
@@ -207,15 +214,27 @@ contract CeloArcadeStableV4 {
         emit CreatorWithdraw(owner, amount);
     }
 
+    /**
+     * @notice Transfers ownership of the contract.
+     * @param newOwner The address of the new owner.
+     */
     function transferOwnership(address newOwner) external onlyOwner {
         require(newOwner != address(0), "Invalid owner");
         owner = newOwner;
     }
 
+    /**
+     * @notice Checks if a player has been granted access to the arcade.
+     * @param player The address of the player to check.
+     */
     function checkAccess(address player) external view returns (bool) {
         return players[player].hasAccess;
     }
 
+    /**
+     * @notice Returns the score multiplier for a given difficulty.
+     * @param difficulty The difficulty level (0=Easy, 1=Medium, 2=Hard).
+     */
     function getMultiplier(uint8 difficulty) public pure returns (uint256) {
         if (difficulty == 0) return 100; // Easy 1x
         if (difficulty == 1) return 150; // Medium 1.5x
@@ -223,14 +242,23 @@ contract CeloArcadeStableV4 {
         revert("Invalid difficulty");
     }
 
+    /**
+     * @notice Returns the current prize pool amount.
+     */
     function getPrizePool() external view returns (uint256) {
         return prizePool;
     }
 
+    /**
+     * @notice Returns the current season number.
+     */
     function getCurrentSeason() external view returns (uint256) {
         return seasonNumber;
     }
 
+    /**
+     * @notice Returns general statistics about the arcade.
+     */
     function getArcadeStats()
         external
         view
@@ -239,25 +267,41 @@ contract CeloArcadeStableV4 {
         return (prizePool, totalPlayers, totalGamesPlayed, seasonNumber);
     }
 
+    /**
+     * @notice Returns the top 10 players on the leaderboard.
+     */
     function getLeaderboard() external view returns (LeaderboardEntry[10] memory) {
         return leaderboard;
     }
 
+    /**
+     * @notice Returns the address and score of the current top player.
+     */
     function getTopPlayer() external view returns (address, uint256) {
         return (leaderboard[0].player, leaderboard[0].totalScore);
     }
 
+    /**
+     * @notice Returns whether the prize pool can currently be claimed.
+     */
     function canClaimPrize() public view returns (bool) {
         if (leaderboard[0].player == address(0) || prizePool == 0) return false;
         return block.timestamp >= lastClaimTime + CLAIM_COOLDOWN;
     }
 
+    /**
+     * @notice Returns the time remaining until the next prize claim is possible.
+     */
     function getTimeUntilNextClaim() external view returns (uint256) {
         uint256 claimAt = lastClaimTime + CLAIM_COOLDOWN;
         if (block.timestamp >= claimAt) return 0;
         return claimAt - block.timestamp;
     }
 
+    /**
+     * @notice Returns statistics for a specific player.
+     * @param playerAddress The address of the player.
+     */
     function getPlayerStats(address playerAddress)
         external
         view
@@ -275,6 +319,11 @@ contract CeloArcadeStableV4 {
         return (true, player.totalScore, player.gamesPlayed, player.lastPlayTime, player.seasonJoined);
     }
 
+    /**
+     * @notice Returns a player's score for a specific game.
+     * @param playerAddress The address of the player.
+     * @param gameType The type of game.
+     */
     function getPlayerGameScore(address playerAddress, uint8 gameType)
         external
         view
@@ -289,6 +338,10 @@ contract CeloArcadeStableV4 {
         return (gameScore.score, gameScore.difficulty, gameScore.timestamp);
     }
 
+    /**
+     * @notice Returns all game scores for a player in the current season.
+     * @param playerAddress The address of the player.
+     */
     function getAllPlayerGameScores(address playerAddress) external view returns (uint256[5] memory scores) {
         if (players[playerAddress].seasonJoined != seasonNumber) {
             return scores;
