@@ -33,9 +33,18 @@ export const MINIPAY_FEE_CURRENCY = (
 // Backward-compatible export name used across the app.
 export const USDM_TOKEN_ADDRESS = STABLE_TOKEN_ADDRESS;
 
-// Frontend fallback only; app now reads ENTRY_FEE from contract at runtime.
-export const ENTRY_FEE = parseUnits('0.01', STABLE_TOKEN_DECIMALS);
+/** Default entry fee value in human-readable stablecoin units (e.g. 0.01 USDT). */
+export const DEFAULT_ENTRY_FEE_VALUE = '0.01';
 
+/**
+ * Frontend fallback entry fee.
+ * Note: The app typically reads the current fee from the contract at runtime.
+ */
+export const ENTRY_FEE = parseUnits(DEFAULT_ENTRY_FEE_VALUE, STABLE_TOKEN_DECIMALS);
+
+/**
+ * Game type identifiers used by the smart contract.
+ */
 export const GameType = {
   CAR_RACE: 0,
   SNAKE: 1,
@@ -44,6 +53,9 @@ export const GameType = {
   PUZZLE: 4,
 } as const;
 
+/**
+ * Difficulty level identifiers used by the smart contract.
+ */
 export const Difficulty = {
   EASY: 0,
   MEDIUM: 1,
