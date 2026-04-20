@@ -20,6 +20,10 @@ contract CeloArcadeStableV4 {
     uint256 private constant CREATOR_BPS = 2000; // 20%
     uint256 private constant BPS_DENOMINATOR = 10000;
 
+    uint256 private constant MULTIPLIER_EASY = 100;
+    uint256 private constant MULTIPLIER_MEDIUM = 150;
+    uint256 private constant MULTIPLIER_HARD = 200;
+
     struct Player {
         bool hasAccess;
         uint256 totalScore;
@@ -217,9 +221,9 @@ contract CeloArcadeStableV4 {
     }
 
     function getMultiplier(uint8 difficulty) public pure returns (uint256) {
-        if (difficulty == 0) return 100; // Easy 1x
-        if (difficulty == 1) return 150; // Medium 1.5x
-        if (difficulty == 2) return 200; // Hard 2x
+        if (difficulty == 0) return MULTIPLIER_EASY; // Easy 1x
+        if (difficulty == 1) return MULTIPLIER_MEDIUM; // Medium 1.5x
+        if (difficulty == 2) return MULTIPLIER_HARD; // Hard 2x
         revert("Invalid difficulty");
     }
 
