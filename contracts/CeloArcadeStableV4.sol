@@ -178,6 +178,10 @@ contract CeloArcadeStableV4 {
         emit GamePlayed(msg.sender, gameType, difficulty, rawScore, finalScore, player.totalScore);
     }
 
+    /**
+     * @notice Allows the top player to claim the prize pool and start a new season.
+     * @dev Resets the leaderboard and increments the season number.
+     */
     function claimPrizePool() external nonReentrant {
         require(canClaimPrize(), "Prize not claimable");
         require(leaderboard[0].player == msg.sender, "Only top player can claim");
