@@ -19,6 +19,7 @@ contract CeloArcadeStableV4 {
     uint256 private constant MAX_LEADERBOARD_SIZE = 10;
     uint256 private constant CREATOR_BPS = 2000; // 20%
     uint256 private constant BPS_DENOMINATOR = 10000;
+    uint256 private constant SCORE_MULTIPLIER_UNIT = 100;
 
     struct Player {
         bool hasAccess;
@@ -161,7 +162,7 @@ contract CeloArcadeStableV4 {
             _resetPlayerForSeason(msg.sender, player);
         }
 
-        uint256 finalScore = (rawScore * getMultiplier(difficulty)) / 100;
+        uint256 finalScore = (rawScore * getMultiplier(difficulty)) / SCORE_MULTIPLIER_UNIT;
         player.totalScore += finalScore;
         player.gamesPlayed += 1;
         player.lastPlayTime = block.timestamp;
