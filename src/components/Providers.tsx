@@ -4,6 +4,7 @@ import { WagmiProvider, createConfig, http, useAccount, useChainId, useSwitchCha
 import { celo } from 'wagmi/chains';
 import { farcasterMiniApp } from '@farcaster/miniapp-wagmi-connector';
 import { injected, walletConnect } from 'wagmi/connectors';
+import { APP_METADATA, CELO_CHAIN_ID } from '@/lib/contract';
 import { useState, useEffect, type ReactNode } from 'react';
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim() || '';
@@ -16,19 +17,17 @@ const config = createConfig({
   connectors: [
     farcasterMiniApp(),
     injected(),
-    walletConnect({ 
+    walletConnect({
       projectId,
       metadata: {
-        name: 'Celo Game Arcade',
-        description: 'Play games and win USDm!',
+        ...APP_METADATA,
         url: typeof window !== 'undefined' ? window.location.origin : '',
-        icons: ['https://celo.org/favicon.ico'],
       },
     }),
   ],
 });
 
-const CELO_MAINNET_ID = 42220;
+const CELO_MAINNET_ID = CELO_CHAIN_ID;
 
 function NetworkGuard({ children }: { children: ReactNode }) {
   const { isConnected, address } = useAccount();
