@@ -19,6 +19,8 @@ contract CeloArcadeStableV4 {
     uint256 private constant MAX_LEADERBOARD_SIZE = 10;
     uint256 private constant CREATOR_BPS = 2000; // 20%
     uint256 private constant BPS_DENOMINATOR = 10000;
+    uint256 private constant MIN_FEE_DIVISOR = 100;
+    uint256 private constant MAX_FEE_MULTIPLIER = 5;
 
     struct Player {
         bool hasAccess;
@@ -102,8 +104,8 @@ contract CeloArcadeStableV4 {
         tokenDecimals = decimals;
 
         uint256 unit = 10 ** uint256(decimals);
-        _minEntryFee = unit / 100; // 0.01 token
-        _maxEntryFee = unit * 5;   // 5 token
+        _minEntryFee = unit / MIN_FEE_DIVISOR; // 0.01 token
+        _maxEntryFee = unit * MAX_FEE_MULTIPLIER;   // 5 token
 
         seasonNumber = 1;
         seasonStartTime = block.timestamp;
@@ -185,6 +187,10 @@ contract CeloArcadeStableV4 {
         emit GamePlayed(msg.sender, gameType, difficulty, rawScore, finalScore, player.totalScore);
     }
 
+    /**
+     * @notice Allows the top player to claim the prize pool and start a new season.
+     * @dev Resets the leaderboard and increments the season number.
+     */
     function claimPrizePool() external nonReentrant {
         require(canClaimPrize(), "Prize not claimable");
         require(leaderboard[0].player == msg.sender, "Only top player can claim");
